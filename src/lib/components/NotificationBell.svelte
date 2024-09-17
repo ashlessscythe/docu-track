@@ -15,7 +15,7 @@
 		<Bell />
 		{#if notifications.length > 0}
 			<span
-				class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+				class="absolute top-0 right-0 rounded-full w-5 h-5 flex items-center justify-center text-xs"
 			>
 				{notifications.length}
 			</span>

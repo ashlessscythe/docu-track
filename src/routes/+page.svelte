@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { Avatar, Accordion, AccordionItem, Modal } from '@skeletonlabs/skeleton';
+	import { Avatar, Accordion, AccordionItem } from '@skeletonlabs/skeleton';
 	import { fade, fly } from 'svelte/transition';
 	import { goto } from '$app/navigation';
-	import DocumentSubmission from '$lib/components/DocumentSubmission.svelte';
 	import { APP_NAME } from '$lib/config';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';

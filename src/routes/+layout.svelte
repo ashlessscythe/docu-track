@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '../app.postcss';
 	import { APP_NAME } from '$lib/config';
-	import { AppShell, AppBar, initializeStores } from '@skeletonlabs/skeleton';
+	import { AppShell, AppBar, type ModalComponent } from '@skeletonlabs/skeleton';
 	import NotificationBell from '$lib/components/NotificationBell.svelte';
 	import { LightSwitch } from '@skeletonlabs/skeleton';
 	import { page } from '$app/stores';
@@ -10,6 +10,15 @@
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { isAuthenticated } from '$lib/stores/auth';
+	import { initializeStores, Modal } from '@skeletonlabs/skeleton';
+	initializeStores();
+
+	import CreateDocument from '$lib/components/CreateDocument.svelte';
+
+	const modalRegistry: Record<string, ModalComponent> = {
+		// add components here
+		createDocument: { ref: CreateDocument }
+	}
 
 	// Highlight JS (keep this if you're using code highlighting in your app)
 	import hljs from 'highlight.js/lib/core';
@@ -24,7 +33,6 @@
 	hljs.registerLanguage('javascript', javascript);
 	hljs.registerLanguage('typescript', typescript);
 	storeHighlightJs.set(hljs);
-	initializeStores();
 
 	// Floating UI for Popups
 	import { computePosition, autoUpdate, flip, shift, offset, arrow } from '@floating-ui/dom';
@@ -41,6 +49,8 @@
 		goto('/');
 	}
 </script>
+
+<Modal components={modalRegistry}/>
 
 <AppShell>
 	<svelte:fragment slot="header">
