@@ -1,102 +1,91 @@
 <script lang="ts">
 	import { Avatar, Accordion, AccordionItem, Modal } from '@skeletonlabs/skeleton';
 	import { fade, fly } from 'svelte/transition';
+	import { goto } from '$app/navigation';
 	import DocumentSubmission from '$lib/components/DocumentSubmission.svelte';
-	import LoginModal from '$lib/components/LoginModal.svelte';
 	import { APP_NAME } from '$lib/config';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
+	import authRef, { checkAuthStatus } from '$lib/authorizerConfig';
 
-	let isLoginModalOpen = false;
-
-	// Create a writable store to hold the current date and time
-  	const currentDate = writable('');
-
-  	// Function to update the current date and time
-  	function updateDateTime() {
-    	const now = new Date().toLocaleDateString('en-US', {
-      	weekday: 'long',
-      	year: 'numeric',
-      	month: 'long',
-      	day: 'numeric',
-      	hour: '2-digit',
-      	minute: '2-digit',
-      	second: '2-digit',
-    	});
-    	currentDate.set(now);
-  	}
-
-  	// Use onMount to set an interval that updates the time every second
-  	onMount(() => {
-    	updateDateTime(); // Initialize the time immediately
-
-    	const interval = setInterval(() => {
-      	updateDateTime();
-    	}, 1000); // Update every second
-
-    	return () => {
-      	clearInterval(interval); // Clear interval when component is destroyed
-    	};
-  	});
-
-	const features = [
-		{ title: 'Easy Submission', content: 'Upload documents with just a few clicks.' },
-		{ title: 'Quick Approval', content: 'Streamlined approval process for faster turnaround.' },
-		{ title: 'Secure Storage', content: 'Your documents are encrypted and stored safely.' },
-		{ title: 'Detailed Analytics', content: 'Get insights on document flows and approvals.' }
-	];
-
-	function openModal() {
-		isLoginModalOpen = true;
-		console.log("open modal clicked")
+	function navigateToLogin() {
+		goto('/login');
 	}
 
-	function closeModal() {
-		isLoginModalOpen = false;
+	const currentDate = writable('');
+
+	function updateDateTime() {
+		const now = new Date().toLocaleDateString('en-US', {
+			weekday: 'long',
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit',
+		});
+		currentDate.set(now);
 	}
 
+	let isAuthenticated = false;
+	let isLoading = true;
+
+	onMount(() => {
+		updateDateTime();
+		const interval = setInterval(updateDateTime, 1000);
+
+		// Use an IIFE to handle the async operation
+		(async () => {
+			const session = await checkAuthStatus();
+			if (session?.data?.user) {
+				isAuthenticated = true;
+			}
+			isLoading = false;
+		})();
+
+		// Return the cleanup function
+		return () => {
+			clearInterval(interval);
+		};
+	});
 </script>
 
 <div class="container mx-auto p-4 space-y-8">
-	<!-- Previous sections remain unchanged -->
-	<section class="card p-4" in:fade="{{ duration: 300, delay: 300 }}">
-    	<h1 class="h1 mb-4">Welcome to {APP_NAME}</h1>
-    	<p class="text-2xl font-light">Streamline your document management process</p>
-    	<p class="text-surface-600-300-token">Today is {$currentDate}</p>
-  	</section>
-
-	<section class="card p-4 text-center" in:fade={{ duration: 300, delay: 1200 }}>
-		<h2 class="h2 mb-4">Access Your Account</h2>
-		<p class="mb-4">Login to manage your documents and approvals.</p>
-		<button class="btn variant-filled-primary" on:click={openModal}>Login / Signup</button>
+	<section class="card p-6 md:p-8 lg:p-10 space-y-4 md:space-y-6 lg:space-y-8" in:fade="{{ duration: 300, delay: 300 }}">
+  	<div class="flex flex-col md:flex-row items-center justify-between">
+    	<h1 class="h1 text-2xl md:text-3xl lg:text-4xl font-bold text-primary-500">Welcome to {APP_NAME}</h1>
+    	<p class="text-surface-600-300-token text-sm md:text-base lg:text-lg mt-2 md:mt-0">
+      	{$currentDate}
+    	</p>
+  	</div>
+  
+  	<p class="text-lg md:text-xl lg:text-2xl font-light text-center md:text-left">
+    	Streamline your document management process
+  	</p>
+  
+	{#if !isAuthenticated}
+  	<div class="flex flex-wrap justify-center md:justify-start gap-4">
+    	<button class="btn variant-filled-primary">Get Started</button>
+    	<button class="btn variant-soft-secondary">Learn More</button>
+  	</div>
+	{/if}
 	</section>
-
-  	<section class="grid grid-cols-2 md:grid-cols-1 gap-4">
-		<div class="card p-4" in:fly="{{ y: 50, duration: 300, delay: 900 }}">
-		<h2 class="h2 mb-4">Key Features</h2>
-		<Accordion>
-			{#each features as feature}
-			<AccordionItem>
-				<svelte:fragment slot="lead"><Avatar initials={feature.title[0]} /></svelte:fragment>
-				<svelte:fragment slot="summary">{feature.title}</svelte:fragment>
-				<svelte:fragment slot="content">{feature.content}</svelte:fragment>
-			</AccordionItem>
-			{/each}
-		</Accordion>
-		</div>
-  	</section>
-
+	
+	{#if isLoading}
+		<section class="card p-4 text-center" in:fade={{ duration: 300, delay: 600 }}>
+			<p>Loading...</p>
+		</section>
+	{:else if !isAuthenticated}
+		<section class="card p-4 text-center" in:fade={{ duration: 300, delay: 1200 }}>
+			<h2 class="h2 mb-4">Access Your Account</h2>
+			<p class="mb-4">Login to manage your documents and approvals.</p>
+			<button class="btn variant-filled-primary" on:click={navigateToLogin}>Login / Signup</button>
+		</section>
+	{/if}
 </div>
-
-<LoginModal onClose={closeModal} open={isLoginModalOpen} />
-
 
 <style lang="postcss">
 	.card {
 		@apply shadow-xl;
 	}
 </style>
-
-
-
-

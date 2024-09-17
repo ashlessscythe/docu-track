@@ -4,6 +4,10 @@
 	import { AppShell, AppBar, initializeStores } from '@skeletonlabs/skeleton';
 	import NotificationBell from '$lib/components/NotificationBell.svelte';
 	import { LightSwitch } from '@skeletonlabs/skeleton';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
+	import authRef, { checkAuthStatus } from '$lib/authorizerConfig';
+	import { onMount } from 'svelte';
 
 	// Highlight JS (keep this if you're using code highlighting in your app)
 	import hljs from 'highlight.js/lib/core';
@@ -24,6 +28,27 @@
 	import { computePosition, autoUpdate, flip, shift, offset, arrow } from '@floating-ui/dom';
 	import { storePopup } from '@skeletonlabs/skeleton';
 	storePopup.set({ computePosition, autoUpdate, flip, shift, offset, arrow });
+
+	// auth
+	let isAuthenticated = false;
+	onMount(async () => {
+		const session = await checkAuthStatus();
+		let user;
+		if (session?.data?.user) {
+			user = session?.data?.user;
+			isAuthenticated = true;
+		} else {
+			isAuthenticated = false
+		}
+		console.log(`isAuthenticated is: ${isAuthenticated}`)
+		console.log(`email is: ${session?.data?.user?.email}`)
+	})
+
+	async function logout() {
+		await authRef.logout();
+		isAuthenticated = false;
+		goto('/');
+	}
 </script>
 
 <AppShell>
@@ -37,10 +62,15 @@
 				</a>
 			</svelte:fragment>
 			<svelte:fragment slot="trail">
+				{#if isAuthenticated}
 				<a class="btn btn-sm variant-ghost-surface" href="/dashboard">Dashboard</a>
 				<a class="btn btn-sm variant-ghost-surface" href="/documents">Documents</a>
 				<a class="btn btn-sm variant-ghost-surface" href="/approvals">Approvals</a>
 				<NotificationBell />
+				<button on:click={logout} class="btn btn-sm variant-ghost-surface">Logout</button>
+				{:else if $page.url.pathname != '/login'}
+				<a href='/login' class="btn btn-sm variant-ghost-surface">Login / Signup</a>
+				{/if}
 				<LightSwitch />
 			</svelte:fragment>
 		</AppBar>

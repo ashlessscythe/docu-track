@@ -16,55 +16,38 @@
   let error: string | null = null;
   const loading = writable(false);
 
+  $: isSignup = activeTab === 'signup';
+  $: isFormValid = email && password && (!isSignup || password === confirmPassword);
+
   // Handle form submission
   async function handleSubmit() {
+    if (!isFormValid) {
+      console.log('form is not valid')
+      return;
+    }
     error = null;
     loading.set(true);
-    try {
-      if (activeTab === 'login') {
-        const response = await authRef.login({
-          email,
-          password,
-        });
-        if (response?.data?.access_token) {
-          // Login successful
-          closeModal();
-          resetForm();
-          // Update user state or redirect as needed
-        } else {
-          error = response?.data?.message || 'An error occurred during login';
-        }
-      } else if (activeTab === 'signup') {
-        if (password !== confirmPassword) {
-          error = 'Passwords do not match';
-          return;
-        }
-        const response = await authRef.signup({
-          email,
-          password,
-          confirm_password: '',
-        });
-        if (response?.data?.access_token) {
-          // Signup successful
-          closeModal();
-          resetForm();
-          // Update user state or redirect as needed
-        } else {
-          error = response?.data?.message || 'An error occurred during signup';
-        }
+   try {
+      const response = isSignup
+        ? await authRef.signup({ email, password, confirm_password: confirmPassword })
+        : await authRef.login({ email, password });
+
+      if (response?.data?.access_token) {
+        closeModal();
+        // Update user state or redirect as needed
+      } else {
+        error = response?.data?.message || `An error occurred during ${isSignup ? 'signup' : 'login'}`;
       }
     } catch (err) {
       console.error('Authentication error:', err);
-      error = 'An unexpected error occurred';
+      error = 'An unexpected error occurred. Please try again.';
     } finally {
       loading.set(false);
     }
-  }
+  } 
 
   function resetForm() {
-    email = '';
-    password = '';
-    confirmPassword = '';
+    email = password = confirmPassword = '';
     error = null;
   }
 
@@ -75,21 +58,12 @@
 </script>
 
 <!-- Modal Component -->
-<Modal bind:open={open} on:close={closeModal}>
+<Modal bind:open on:close={closeModal}>
   <div class="p-6 space-y-4">
     <h2 class="text-2xl font-bold">Account Access</h2>
-    <TabGroup name={'grp1'}>
-      <Tab
-       group='grp1' value='login' name='login' on:click={() => (activeTab = 'login')}
-      >
-        Login
-      </Tab>
-      <Tab
-        group='grp1' value='signup' name='signup'
-        on:click={() => (activeTab = 'signup')}
-      >
-        Signup
-    </Tab>
+    <TabGroup>
+      <Tab bind:group={activeTab} name="login" value="login">Login</Tab>
+      <Tab bind:group={activeTab} name="signup" value="signup">Signup</Tab>
     </TabGroup>
     <form on:submit|preventDefault={handleSubmit} class="space-y-4">
       <input
@@ -106,7 +80,7 @@
         required
         aria-label="Password"
       />
-      {#if activeTab === 'signup'}
+      {#if isSignup}
         <input
           type="password"
           bind:value={confirmPassword}
@@ -120,9 +94,9 @@
       {/if}
       <button type="submit" class="w-full" disabled={$loading}>
         {#if $loading}
-          {activeTab === 'login' ? 'Logging in...' : 'Signing up...'}
+          {isSignup ? 'Signing up...' : 'Logging in...'}
         {:else}
-          {activeTab === 'login' ? 'Log In' : 'Sign Up'}
+          {isSignup ? 'Sign Up' : 'Log In'}
         {/if}
       </button>
     </form>
