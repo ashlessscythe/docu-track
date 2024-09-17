@@ -6,10 +6,14 @@
 	import { APP_NAME } from '$lib/config';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
-	import authRef, { checkAuthStatus } from '$lib/authorizerConfig';
+	import { isAuthenticated } from '$lib/stores/auth';
 
 	function navigateToLogin() {
-		goto('/login');
+		if ($isAuthenticated) {
+			goto('/')
+		} else {
+			goto('/login');
+		}
 	}
 
 	const currentDate = writable('');
@@ -27,7 +31,6 @@
 		currentDate.set(now);
 	}
 
-	let isAuthenticated = false;
 	let isLoading = true;
 
 	onMount(() => {
@@ -36,13 +39,9 @@
 
 		// Use an IIFE to handle the async operation
 		(async () => {
-			const session = await checkAuthStatus();
-			if (session?.data?.user) {
-				isAuthenticated = true;
-			}
+			isAuthenticated.check()
 			isLoading = false;
 		})();
-
 		// Return the cleanup function
 		return () => {
 			clearInterval(interval);
@@ -63,7 +62,7 @@
     	Streamline your document management process
   	</p>
   
-	{#if !isAuthenticated}
+	{#if !$isAuthenticated}
   	<div class="flex flex-wrap justify-center md:justify-start gap-4">
     	<button class="btn variant-filled-primary">Get Started</button>
     	<button class="btn variant-soft-secondary">Learn More</button>
@@ -75,7 +74,7 @@
 		<section class="card p-4 text-center" in:fade={{ duration: 300, delay: 600 }}>
 			<p>Loading...</p>
 		</section>
-	{:else if !isAuthenticated}
+	{:else if !$isAuthenticated}
 		<section class="card p-4 text-center" in:fade={{ duration: 300, delay: 1200 }}>
 			<h2 class="h2 mb-4">Access Your Account</h2>
 			<p class="mb-4">Login to manage your documents and approvals.</p>

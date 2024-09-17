@@ -3,6 +3,7 @@
   import { writable } from 'svelte/store';
   import authRef from '$lib/authorizerConfig';
   import { goto } from '$app/navigation';
+  import { isAuthenticated } from '$lib/stores/auth';
 
   let activeTab: 'login' | 'signup' = 'login';
   let email = '';
@@ -26,6 +27,7 @@
         ? await authRef.signup({ email, password, confirm_password: confirmPassword })
         : await authRef.login({ email, password });
       if (response?.data?.access_token) {
+        await isAuthenticated.login()
         // Redirect to home page or dashboard after successful login/signup
         goto('/');
       } else {

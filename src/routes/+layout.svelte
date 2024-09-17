@@ -6,8 +6,10 @@
 	import { LightSwitch } from '@skeletonlabs/skeleton';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import authRef, { checkAuthStatus } from '$lib/authorizerConfig';
+	import authRef from '$lib/authorizerConfig';
 	import { onMount } from 'svelte';
+	import { writable } from 'svelte/store';
+	import { isAuthenticated } from '$lib/stores/auth';
 
 	// Highlight JS (keep this if you're using code highlighting in your app)
 	import hljs from 'highlight.js/lib/core';
@@ -29,24 +31,13 @@
 	import { storePopup } from '@skeletonlabs/skeleton';
 	storePopup.set({ computePosition, autoUpdate, flip, shift, offset, arrow });
 
-	// auth
-	let isAuthenticated = false;
-	onMount(async () => {
-		const session = await checkAuthStatus();
-		let user;
-		if (session?.data?.user) {
-			user = session?.data?.user;
-			isAuthenticated = true;
-		} else {
-			isAuthenticated = false
-		}
-		console.log(`isAuthenticated is: ${isAuthenticated}`)
-		console.log(`email is: ${session?.data?.user?.email}`)
-	})
+	onMount(() => {
+		isAuthenticated.check();
+	});
 
 	async function logout() {
 		await authRef.logout();
-		isAuthenticated = false;
+		isAuthenticated.logout()
 		goto('/');
 	}
 </script>
@@ -62,7 +53,7 @@
 				</a>
 			</svelte:fragment>
 			<svelte:fragment slot="trail">
-				{#if isAuthenticated}
+				{#if $isAuthenticated}
 				<a class="btn btn-sm variant-ghost-surface" href="/dashboard">Dashboard</a>
 				<a class="btn btn-sm variant-ghost-surface" href="/documents">Documents</a>
 				<a class="btn btn-sm variant-ghost-surface" href="/approvals">Approvals</a>
