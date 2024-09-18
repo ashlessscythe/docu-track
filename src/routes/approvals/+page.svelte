@@ -1,50 +1,103 @@
 <!-- src/routes/approvals/+page.svelte -->
 <script lang="ts">
-import { onMount } from 'svelte';
-import { isAuthenticated } from '$lib/stores/auth';
-import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { isAuthenticated } from '$lib/stores/auth';
+	import { getModalStore } from '@skeletonlabs/skeleton';
+	import { goto } from '$app/navigation';
+	import type { Approval } from '$lib/types';
 
-onMount(async () => {
-    if (!$isAuthenticated) {
-        goto('/login');
-    }
-});
+	const modalStore = getModalStore();
 
-let approvals = [
-    { id: 1, title: 'Approval 1', requester: 'John Doe', date: '2024-09-17' },
-    { id: 2, title: 'Approval 2', requester: 'Jane Smith', date: '2024-09-16' },
-    { id: 3, title: 'Approval 3', requester: 'Bob Johnson', date: '2024-09-15' },
-];
+	let approvals: Approval[] = [];
+	let currentApprovalId: string | null = null;
 
-// You can add more approval-specific logic here
+	onMount(async () => {
+		if (!$isAuthenticated) {
+			goto('/login');
+		}
+		fetchApprovals();
+	});
+
+	async function fetchApprovals() {
+		const response = await fetch('/api/approvals');
+		if (response.ok) {
+			approvals = await response.json();
+		} else {
+			console.error('Failed to fetch approvals');
+		}
+	}
+
+	async function updateApprovalStatus(approvalId: string, newStatus: string, comment?: string) {
+		const response = await fetch(`/api/approvals/${approvalId}`, {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ status: newStatus, comment })
+		});
+
+		if (response.ok) {
+			await fetchApprovals(); // Refresh the entire list
+		} else {
+			console.error('Failed to update approval status');
+		}
+	}
+
+	function openRejectionModal(approvalId: string) {
+		modalStore.trigger({
+			type: 'component',
+			component: 'rejectionModal',
+			meta: {
+				approvalId,
+				onSubmit: (comment: string) => {
+					updateApprovalStatus(approvalId, 'rejected', comment);
+				}
+			}
+		});
+	}
 </script>
 
 <div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4">Approvals</h1>
-    
-    <div class="card p-4">
-        <table class="table table-compact w-full">
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Requester</th>
-                    <th>Date</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {#each approvals as approval}
-                    <tr>
-                        <td>{approval.title}</td>
-                        <td>{approval.requester}</td>
-                        <td>{approval.date}</td>
-                        <td>
-                            <button class="btn btn-sm variant-filled-success">Approve</button>
-                            <button class="btn btn-sm variant-filled-error">Reject</button>
-                        </td>
-                    </tr>
-                {/each}
-            </tbody>
-        </table>
-    </div>
+	<h1 class="text-2xl font-bold mb-4">Approvals</h1>
+	<div class="card p-4">
+		<table class="table table-compact w-full">
+			<thead>
+				<tr>
+					<th>Document Title</th>
+					<th>Approver</th>
+					<th>Status</th>
+					<th>Date</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each approvals as approval}
+					<tr>
+						<td>{approval.documents.title}</td>
+						<td>{approval.users.full_name}</td>
+						<td>{approval.status}</td>
+						<td>{new Date(approval.created_at).toLocaleDateString()}</td>
+						<td>
+							{#if approval.status === 'pending'}
+								<button
+									class="btn btn-sm variant-filled-success"
+									on:click={() => updateApprovalStatus(approval.id, 'approved')}
+								>
+									Approve
+								</button>
+								<button
+									class="btn btn-sm variant-filled-error"
+									on:click={() => openRejectionModal(approval.id)}
+								>
+									Reject
+								</button>
+							{:else}
+								<span>{approval.status}</span>
+							{/if}
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
 </div>

@@ -14,11 +14,13 @@
 	initializeStores();
 
 	import CreateDocument from '$lib/components/CreateDocument.svelte';
+	import RejectionModal from '$lib/components/RejectionModal.svelte';
 
 	const modalRegistry: Record<string, ModalComponent> = {
 		// add components here
-		createDocument: { ref: CreateDocument }
-	}
+		createDocument: { ref: CreateDocument },
+		rejectionModal: { ref: RejectionModal }
+	};
 
 	// Highlight JS (keep this if you're using code highlighting in your app)
 	import hljs from 'highlight.js/lib/core';
@@ -45,32 +47,34 @@
 
 	async function logout() {
 		await authRef.logout();
-		isAuthenticated.logout()
+		isAuthenticated.logout();
 		goto('/');
 	}
 </script>
 
-<Modal components={modalRegistry}/>
+<Modal components={modalRegistry} />
 
 <AppShell>
 	<svelte:fragment slot="header">
 		<AppBar background="bg-surface-100-800-token">
 			<svelte:fragment slot="lead">
 				<a href="/" class="block group">
-					<blockquote class="blockquote cursor-pointer transition duration-300 group-hover:bg-gray-200 group-hover:text-blue-600 p-4">
+					<blockquote
+						class="blockquote cursor-pointer transition duration-300 group-hover:bg-gray-200 group-hover:text-blue-600 p-4"
+					>
 						{APP_NAME}
 					</blockquote>
 				</a>
 			</svelte:fragment>
 			<svelte:fragment slot="trail">
 				{#if $isAuthenticated}
-				<a class="btn btn-sm variant-ghost-surface" href="/dashboard">Dashboard</a>
-				<a class="btn btn-sm variant-ghost-surface" href="/documents">Documents</a>
-				<a class="btn btn-sm variant-ghost-surface" href="/approvals">Approvals</a>
-				<NotificationBell />
-				<button on:click={logout} class="btn btn-sm variant-ghost-surface">Logout</button>
+					<a class="btn btn-sm variant-ghost-surface" href="/dashboard">Dashboard</a>
+					<a class="btn btn-sm variant-ghost-surface" href="/documents">Documents</a>
+					<a class="btn btn-sm variant-ghost-surface" href="/approvals">Approvals</a>
+					<NotificationBell />
+					<button on:click={logout} class="btn btn-sm variant-ghost-surface">Logout</button>
 				{:else if $page.url.pathname != '/login'}
-				<a href='/login' class="btn btn-sm variant-ghost-surface">Login / Signup</a>
+					<a href="/login" class="btn btn-sm variant-ghost-surface">Login / Signup</a>
 				{/if}
 				<LightSwitch />
 			</svelte:fragment>
