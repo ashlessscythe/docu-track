@@ -57,10 +57,11 @@
 	}
 </script>
 
-<div class="container mx-auto p-4">
+<div class="table-container mx-auto p-4">
 	<h1 class="text-2xl font-bold mb-4">Approvals</h1>
-	<div class="card p-4">
-		<table class="table table-compact w-full">
+	<div class="card p-4 overflow-hidden">
+		<div class="overflow-x-auto">
+		<table class="table table-hover">
 			<thead>
 				<tr>
 					<th>Document Title</th>
@@ -99,5 +100,6 @@
 				{/each}
 			</tbody>
 		</table>
+		</div>
 	</div>
 </div>

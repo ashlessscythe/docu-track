@@ -66,31 +66,32 @@
 	}
 </script>
 
-<div class="container mx-auto p-4">
-	<h1 class="text-2xl font-bold mb-4">Documents</h1>
-
-	<button class="btn variant-filled-primary mb-4" on:click={openModal}>Create New Document</button>
-	<div class="card p-4">
-		<table class="table table-compact w-full">
-			<thead>
-				<tr>
-					<th>Title</th>
-					<th>Date</th>
-					<th>Actions</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each documents as doc}
-					<tr>
-						<td>{doc.title}</td>
-						<td>{new Date(doc.created_at).toLocaleDateString()}</td>
-						<td>
-							<button class="btn btn-sm variant-ghost-primary">View</button>
-							<button class="btn btn-sm variant-ghost-warning">Edit</button>
-						</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
+<div class="table-container mx-auto p-4">
+  <h1 class="text-2xl font-bold mb-4">Documents</h1>
+  <button class="btn variant-filled-primary mb-4" on:click={openModal}>Create New Document</button>
+  <div class="card p-4 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Date</th>
+            <th>Actions</th>
+		  </tr>
+        </thead>
+        <tbody>
+          {#each documents as doc}
+            <tr>
+              <td>{doc.title}</td>
+              <td>{new Date(doc.created_at).toLocaleDateString()}</td>
+              <td>
+                <button class="btn btn-sm variant-ghost-primary mr-2">View</button>
+                <button class="btn btn-sm variant-ghost-warning">Edit</button>
+			  </td>
+            </tr>
+          {/each}
+        </tbody>
+	</table>
+    </div>
+  </div>
 </div>

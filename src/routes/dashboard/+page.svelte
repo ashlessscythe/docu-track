@@ -27,22 +27,24 @@ onMount(async () => {
 </script>
 
 <div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4">Dashboard</h1>
+    <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div class="card p-4">
-            <h2 class="text-xl font-semibold mb-2">Recent Documents</h2>
-            <p>List of recent documents will appear here.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="card p-6">
+            <h2 class="text-xl font-semibold mb-4">Recent Documents</h2>
+            <p class="text-sm">List of recent documents will appear here.</p>
         </div>
         
-        <div class="card p-4">
-            <h2 class="text-xl font-semibold mb-2">Pending Approvals</h2>
-            <p>List of pending approvals will appear here.</p>
+        <div class="card p-6">
+            <h2 class="text-xl font-semibold mb-4">Pending Approvals</h2>
+            <p class="text-sm">List of pending approvals will appear here.</p>
         </div>
         
-        <div class="card p-4">
-            <h2 class="text-xl font-semibold mb-2">Quick Actions</h2>
-            <button class='btn btn-lg hover:variant-filled variant-ghost m-2' on:click={openModal}>New Document</button>
+        <div class="card p-6">
+            <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
+            <button class="btn btn-lg hover:variant-filled variant-ghost-primary w-full sm:w-auto" on:click={openModal}>
+                New Document
+            </button>
         </div>
     </div>
 </div>
