@@ -37,6 +37,7 @@ model Document {
   title        String        @db.VarChar(255)
   content      String?
   fileUrl      String?       @db.VarChar(1024)
+  blobContent  Bytes?        @db.ByteA
   createdBy    String        @db.VarChar(255)
   createdAt    DateTime      @default(now()) @db.Timestamptz(6)
   updatedAt    DateTime      @default(now()) @db.Timestamptz(6)
