@@ -4,6 +4,7 @@
   import authRef from '$lib/authorizerConfig';
   import { goto } from '$app/navigation';
   import { isAuthenticated } from '$lib/stores/auth';
+  import { type AuthToken, type ApiResponse } from '@authorizerdev/authorizer-js';
 
   let activeTab: 'login' | 'signup' = 'login';
   let email = '';
@@ -15,6 +16,7 @@
   $: isSignup = activeTab === 'signup';
   $: isFormValid = email && password && (!isSignup || password === confirmPassword);
 
+
   async function handleSubmit() {
     if (!isFormValid) {
       console.log('form is not valid');
@@ -23,19 +25,41 @@
     error = null;
     loading.set(true);
     try {
-      const response = isSignup
+      const response: ApiResponse<AuthToken> = isSignup
         ? await authRef.signup({ email, password, confirm_password: confirmPassword })
         : await authRef.login({ email, password });
-      if (response?.data?.access_token) {
+      
+      console.log('Auth response:', response); // Add this line for debugging
+
+      if (response.data?.access_token) {
         await isAuthenticated.login()
         // Redirect to home page or dashboard after successful login/signup
         goto('/');
       } else {
-        error = response?.data?.message || `An error occurred during ${isSignup ? 'signup' : 'login'}`;
+        // Handle cases where the response doesn't contain an access token
+        if (response.errors && response.errors.length > 0) {
+          // If there are specific errors in the response, display them
+          error = response.errors.map(err => err.message).join(', ');
+        } else if (response.data?.message) {
+          // If there's a general error message, display it
+          error = response.data.message;
+        } else {
+          // If no specific error information is available
+          error = `An error occurred during ${isSignup ? 'signup' : 'login'}. Please try again.`;
+        }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Authentication error:', err);
-      error = 'An unexpected error occurred. Please try again.';
+      if (err instanceof Error && 'response' in err) {
+        const responseData = (err.response as any)?.data;
+        if (responseData?.errors && responseData.errors.length > 0) {
+          error = responseData.errors.map((e: { message: string }) => e.message).join(', ');
+        } else {
+          error = responseData?.message || responseData?.error || 'An unexpected error occurred. Please try again.';
+        }
+      } else {
+        error = 'An unknown error occurred. Please try again.';
+      }
     } finally {
       loading.set(false);
     }

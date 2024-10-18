@@ -1,5 +1,5 @@
 // src/lib/authorizerConfig.ts
-import { Authorizer, type ApiResponse, type AuthToken } from '@authorizerdev/authorizer-js'
+import { Authorizer, type ApiResponse, type AuthToken, type User } from '@authorizerdev/authorizer-js'
 import { APP_URL, AUTHORIZER_URL, CLIENT_ID } from '$lib/config'
 
 const authRef = new Authorizer({
@@ -10,13 +10,13 @@ const authRef = new Authorizer({
  
 /**
  * Check if the user is authenticated.
- * @returns {Promise<APIResponse<AuthToken> | null>} Returns user session if authenticated, null otherwise.
+ * @returns {Promise<User | null>} Returns user object if authenticated, null otherwise.
  */
-export const checkAuthStatus = async (): Promise<ApiResponse<AuthToken> | null> => {
+export const checkAuthStatus = async (): Promise<User | null> => {
   try {
     const session = await authRef.getSession();
-    if (session) {
-      return session;
+    if (session && session.data && session.data.user) {
+      return session.data.user;
     }
     return null;
   } catch (error) {
@@ -25,5 +25,5 @@ export const checkAuthStatus = async (): Promise<ApiResponse<AuthToken> | null> 
   }
 };
 
-
+export type { User };
 export default authRef;

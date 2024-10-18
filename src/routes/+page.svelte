@@ -5,7 +5,7 @@
 	import { APP_NAME } from '$lib/config';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
-	import { isAuthenticated } from '$lib/stores/auth';
+	import { isAuthenticated, userStore } from '$lib/stores/auth';
 
 	function navigateToLogin() {
 		if ($isAuthenticated) {
@@ -78,6 +78,14 @@
 			<h2 class="h2 mb-4">Access Your Account</h2>
 			<p class="mb-4">Login to manage your documents and approvals.</p>
 			<button class="btn variant-filled-primary" on:click={navigateToLogin}>Login / Signup</button>
+		</section>
+	{:else}
+		<section class="card p-4 text-center" in:fade={{ duration: 300, delay: 1200 }}>
+			<h2 class="h2 mb-4">Welcome, {$userStore?.given_name || 'User'}!</h2>
+			<p class="mb-4">You are now logged in as {$userStore?.email}. Manage your documents and approvals with ease.</p>
+			{#if $userStore?.picture}
+				<img src={$userStore.picture} alt="User avatar" class="w-16 h-16 rounded-full mx-auto mb-4">
+			{/if}
 		</section>
 	{/if}
 </div>

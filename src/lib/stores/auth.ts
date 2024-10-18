@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { checkAuthStatus } from '$lib/authorizerConfig';
+import { checkAuthStatus, type User } from '$lib/authorizerConfig';
 
 function createAuthStore() {
     const { subscribe, set } = writable(false);
@@ -7,15 +7,27 @@ function createAuthStore() {
     return {
         subscribe,
         login: async () => {
-            const session = await checkAuthStatus();
-            set(!!session?.data?.user);
+            const user = await checkAuthStatus();
+            set(!!user);
+            if (user) {
+                userStore.set(user);
+            }
         },
-        logout: () => set(false),
+        logout: () => {
+            set(false);
+            userStore.set(null);
+        },
         check: async () => {
-            const session = await checkAuthStatus();
-            set(!!session?.data?.user);
+            const user = await checkAuthStatus();
+            set(!!user);
+            if (user) {
+                userStore.set(user);
+            } else {
+                userStore.set(null);
+            }
         }
     };
 }
 
 export const isAuthenticated = createAuthStore();
+export const userStore = writable<User | null>(null);
