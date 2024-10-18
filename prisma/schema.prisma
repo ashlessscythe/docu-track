@@ -51,3 +51,14 @@ model Tag {
   name         String        @unique @db.VarChar(50)
   documentTags DocumentTag[]
 }
+
+model Notification {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type      String   @db.VarChar(20)
+  status    String   @db.VarChar(20)
+  message   String
+  userId    String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([userId], map: "idx_notification_user_id")
+}
