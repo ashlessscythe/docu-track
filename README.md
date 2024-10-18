@@ -1,8 +1,17 @@
-# create-svelte
+# DocuTrack
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+DocuTrack is a document management and approval system built with Svelte.
 
-## Creating a project
+## Features
+
+- **Document Management**: Create, store, and manage documents efficiently.
+- **Role-Based Authentication**: Secure access control with role-based permissions.
+- **Notification System**: Stay informed with real-time notifications.
+- **Database Seeding**: Easily populate the database with initial data for testing and development.
+
+## Getting Started
+
+### Creating a project
 
 If you're seeing this, you've probably already done this step. Congrats!
 
@@ -14,7 +23,7 @@ npm create svelte@latest
 npm create svelte@latest my-app
 ```
 
-## Developing
+### Developing
 
 Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
 
@@ -25,7 +34,7 @@ npm run dev
 npm run dev -- --open
 ```
 
-## Building
+### Building
 
 To create a production version of your app:
 
@@ -36,3 +45,11 @@ npm run build
 You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+
+## Recent Updates
+
+1. **Database Seeding**: Added functionality to seed the database with initial data, making it easier to set up development and testing environments.
+2. **Notification System**: Implemented a notification system to keep users informed about important events and updates within the application.
+3. **Role-Based Authentication**: Enhanced security with role-based access control, allowing for more granular permissions and user management.
+
+For more detailed information on these features and how to use them, please refer to the project documentation.
