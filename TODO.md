@@ -41,13 +41,13 @@
 
 ## **Milestone 2.5: Database Seeding**
 
-- [ ] **Create seed.ts script with faker data**
-  - [ ] Implement --use-faker flag for generating realistic data
-  - [ ] Add --count flag for specifying number of records
-  - [ ] Add --clear flag for clearing existing data (false by default)
-  - [ ] Generate users with different roles
-  - [ ] Generate documents with various statuses
-  - [ ] Ensure proper relationships between users and documents
+- [x] **Create seed.ts script with faker data**
+  - [x] Implement --use-faker flag for generating realistic data
+  - [x] Add --count flag for specifying number of records
+  - [x] Add --clear flag for clearing existing data (false by default)
+  - [x] Generate users with different roles
+  - [x] Generate documents with various statuses
+  - [x] Ensure proper relationships between users and documents
 
 **Description:**
 
