@@ -102,14 +102,17 @@
 
 ## **Milestone 4: Approver Dashboard**
 
-- [ ] **Implement approver dashboard**
-  - [ ] View submissions for their department
-  - [ ] Approve or request follow-up on documents
+- [x] **Implement approver dashboard**
+  - [x] View submissions for their department
+  - [x] Approve or request follow-up on documents
+  - [x] Admin access to all documents
+  - [x] Proper dialog management and UI consistency
 
 **Description:**
 
 - Create a dashboard for approvers to manage submissions.
 - Implement functionality to approve or request follow-up.
+- Ensure consistent UI/UX with submitter dashboard.
 
 **Deploy and Test:** Deploy to test the approver's ability to view and manage submissions relevant to their department.
 

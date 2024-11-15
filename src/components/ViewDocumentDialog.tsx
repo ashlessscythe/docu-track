@@ -8,7 +8,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -44,13 +43,16 @@ interface ViewDocumentDialogProps {
     createdAt: string;
   };
   onDocumentUpdate: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function ViewDocumentDialog({
   document,
   onDocumentUpdate,
+  open,
+  onOpenChange,
 }: ViewDocumentDialogProps) {
-  const [open, setOpen] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -88,7 +90,7 @@ export function ViewDocumentDialog({
 
       if (!response.ok) throw new Error("Delete failed");
 
-      setOpen(false);
+      onOpenChange(false);
       onDocumentUpdate();
     } catch (error) {
       console.error("Error deleting document:", error);
@@ -114,7 +116,7 @@ export function ViewDocumentDialog({
 
       if (!response.ok) throw new Error("Update failed");
 
-      setOpen(false);
+      onOpenChange(false);
       onDocumentUpdate();
     } catch (error) {
       console.error("Error updating document:", error);
@@ -135,12 +137,7 @@ export function ViewDocumentDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <button className="text-sm font-medium text-primary hover:underline">
-            View
-          </button>
-        </DialogTrigger>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[600px] font-sans">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">

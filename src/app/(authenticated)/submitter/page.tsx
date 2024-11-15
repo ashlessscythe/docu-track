@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 
 interface Department {
   id: string;
@@ -112,6 +113,8 @@ export default function SubmitterPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const router = useRouter();
 
   const fetchDocuments = useCallback(async () => {
@@ -196,10 +199,16 @@ export default function SubmitterPage() {
                   </TableCell>
                   <TableCell>{formatDate(doc.createdAt)}</TableCell>
                   <TableCell className="text-right">
-                    <ViewDocumentDialog
-                      document={doc}
-                      onDocumentUpdate={fetchDocuments}
-                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedDoc(doc);
+                        setViewDialogOpen(true);
+                      }}
+                    >
+                      View
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -216,6 +225,15 @@ export default function SubmitterPage() {
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {selectedDoc && viewDialogOpen && (
+        <ViewDocumentDialog
+          document={selectedDoc}
+          onDocumentUpdate={fetchDocuments}
+          open={viewDialogOpen}
+          onOpenChange={setViewDialogOpen}
+        />
       )}
     </div>
   );

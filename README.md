@@ -2,14 +2,16 @@
 
 A modern document tracking and approval system built with Next.js 14, Prisma, and PostgreSQL.
 
-## Features
-
 - 🔐 Role-based access control (Admin, Approver, Submitter)
 - 📝 Document submission and tracking
 - ✅ Approval workflow management
+  - Department-specific document views
+  - Admin access to all documents
+  - Approve/Reject/Review actions
+  - Document status tracking
 - 🎨 Modern UI with shadcn/ui components
 - 🌙 Dark mode support (coming soon)
-- 🔄 Real-time updates
+- 🔄 Real-time updates## Features
 - 📱 Responsive design
 
 ## Tech Stack

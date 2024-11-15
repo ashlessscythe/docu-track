@@ -1,9 +1,15 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { redirect } from "next/navigation";
+"use client";
 
-export default async function ApproverPage() {
-  const session = await getServerSession(authOptions);
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import { ApproverDashboard } from "@/components/ApproverDashboard";
+
+export default function ApproverPage() {
+  const { data: session, status } = useSession();
+
+  if (status === "loading") {
+    return null;
+  }
 
   if (!session) {
     redirect("/signin");
@@ -14,14 +20,15 @@ export default async function ApproverPage() {
   }
 
   return (
-    <>
-      <h1 className="mb-4 text-2xl font-bold">Approver Dashboard</h1>
-      <div className="space-y-4">
-        <p className="text-gray-600">
-          Welcome to the approver dashboard. Here you can review and approve
-          submitted documents.
-        </p>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-semibold tracking-tight">
+          {session.user.role === "ADMIN"
+            ? "All Documents"
+            : "Department Documents"}
+        </h1>
       </div>
-    </>
+      <ApproverDashboard />
+    </div>
   );
 }
