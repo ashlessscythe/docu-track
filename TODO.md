@@ -71,15 +71,24 @@
 
 ## **Milestone 3: Document Submission Feature**
 
-- [ ] **Develop document submission feature**
-  - [ ] Form for submitters to upload documents
-  - [ ] Validation for document fields
+- [x] **Develop document submission feature**
+  - [x] Form for submitters to upload documents
+  - [x] Validation for document fields
+  - [x] File upload and storage implementation
+  - [x] Document management features
+    - [x] View document details
+    - [x] Download documents
+    - [x] Delete documents
+    - [x] Replace/update documents
+  - [x] Real-time document list updates
+  - [x] Loading states and error handling
 
 **Description:**
 
 - Build the form for document submission.
 - Ensure all input fields are validated.
 - Enable file upload and storage.
+- Implement comprehensive document management.
 
 **Deploy and Test:** Deploy after the submission feature is functional to test document uploads and data validation.
 
