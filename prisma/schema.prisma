@@ -14,6 +14,7 @@ enum UserRole {
   SUBMITTER
   APPROVER
   ADMIN
+  PENDING
 }
 
 enum DocumentStatus {

@@ -6,58 +6,70 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    // Public paths that don't require authentication
-    if (path.startsWith("/auth")) {
+    // Allow access to home page without a token
+    if (path === "/") {
       return NextResponse.next();
     }
 
-    // Check for session errors or missing token
-    if (!token || (token as any).error === "RefetchUser") {
-      return NextResponse.redirect(new URL("/auth/signin", req.url));
-    }
+    // Handle role-based access
+    if (token?.role) {
+      // Admin has access to everything
+      if (token.role === "ADMIN") {
+        return NextResponse.next();
+      }
 
-    // Admin only paths
-    if (path.startsWith("/admin") && token.role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/unauthorized", req.url));
-    }
+      // Redirect pending users to pending page
+      if (token.role === "PENDING") {
+        if (path !== "/pending") {
+          return NextResponse.redirect(new URL("/pending", req.url));
+        }
+        return NextResponse.next();
+      }
 
-    // Approver only paths (allow ADMIN as well)
-    if (
-      path.startsWith("/approver") &&
-      token.role !== "APPROVER" &&
-      token.role !== "ADMIN"
-    ) {
-      return NextResponse.redirect(new URL("/unauthorized", req.url));
-    }
+      // Allow all authenticated non-pending users to access dashboard
+      if (path === "/dashboard") {
+        return NextResponse.next();
+      }
 
-    // Submitter only paths (allow ADMIN as well)
-    if (
-      path.startsWith("/submitter") &&
-      token.role !== "SUBMITTER" &&
-      token.role !== "ADMIN"
-    ) {
-      return NextResponse.redirect(new URL("/unauthorized", req.url));
+      // Allow users to access their own role-specific pages
+      if (path.startsWith(`/${token.role.toLowerCase()}`)) {
+        return NextResponse.next();
+      }
+
+      // Protect role-specific pages from other roles
+      if (path.startsWith("/approver") || path.startsWith("/submitter")) {
+        return NextResponse.redirect(new URL("/unauthorized", req.url));
+      }
     }
 
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ token }) => {
-        // Check both token existence and validity
-        return !!token && !(token as any).error;
+      authorized: ({ token, req }) => {
+        // Allow access to home page and auth pages without a token
+        if (
+          req.nextUrl.pathname === "/" ||
+          req.nextUrl.pathname.startsWith("/signin") ||
+          req.nextUrl.pathname.startsWith("/register")
+        ) {
+          return true;
+        }
+        // Require token for all other pages
+        return !!token;
       },
     },
   }
 );
 
-// Specify which routes to protect
 export const config = {
   matcher: [
+    "/",
+    "/dashboard",
     "/admin/:path*",
     "/approver/:path*",
     "/submitter/:path*",
-    "/api/documents/:path*",
-    "/dashboard/:path*", // Add dashboard to protected routes
+    "/pending/:path*",
+    "/unauthorized",
   ],
 };

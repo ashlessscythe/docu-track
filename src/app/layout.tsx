@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
+import { APP_NAME } from "@/lib/config";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "DocuTrack",
-  description: "Document tracking and approval system",
+  title: APP_NAME,
+  description: `${APP_NAME} - Document tracking and approval system`,
 };
 
 export default function RootLayout({
@@ -16,8 +17,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className="h-full bg-gray-50">
+      <body className={`h-full ${inter.className}`}>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

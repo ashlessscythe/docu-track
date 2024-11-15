@@ -28,6 +28,15 @@
 - [x] **Implement local authentication system**
   - [x] Set up user registration and login
   - [x] Implement RBAC (Role-Based Access Control)
+  - [x] Create landing page with proper navigation
+  - [x] Implement role-based dashboard access
+  - [x] Add pending state for new registrations
+  - [x] Set up proper auth layouts and routing
+  - [x] Add back navigation for auth pages
+  - [x] Add GitHub repository link
+  - [x] Add MIT license
+  - [x] Configure environment variables
+  - [x] Fix hydration issues with app name
 
 **Description:**
 
