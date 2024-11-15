@@ -11,8 +11,8 @@ export default withAuth(
       return NextResponse.next();
     }
 
-    // Ensure user is authenticated
-    if (!token) {
+    // Check for session errors or missing token
+    if (!token || (token as any).error === "RefetchUser") {
       return NextResponse.redirect(new URL("/auth/signin", req.url));
     }
 
@@ -43,7 +43,10 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token }) => {
+        // Check both token existence and validity
+        return !!token && !(token as any).error;
+      },
     },
   }
 );
@@ -55,5 +58,6 @@ export const config = {
     "/approver/:path*",
     "/submitter/:path*",
     "/api/documents/:path*",
+    "/dashboard/:path*", // Add dashboard to protected routes
   ],
 };
