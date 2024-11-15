@@ -1,0 +1,54 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUBMITTER
+  APPROVER
+  ADMIN
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_REVIEW
+}
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  name          String
+  password      String
+  role          UserRole
+  department    String?    // Optional for submitters and admins
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  documents     Document[] @relation("SubmittedDocuments")
+  approvals     Document[] @relation("DocumentApprovals")
+}
+
+model Document {
+  id          String         @id @default(cuid())
+  name        String
+  type        String
+  description String
+  department  String
+  status      DocumentStatus @default(PENDING)
+  content     Bytes         // Document content stored as bytes
+  mimeType    String        // MIME type of the file
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  submitter   User          @relation("SubmittedDocuments", fields: [submitterId], references: [id])
+  submitterId String
+  approver    User?         @relation("DocumentApprovals", fields: [approverId], references: [id])
+  approverId  String?
+}

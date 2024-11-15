@@ -21,13 +21,13 @@
 
 ## **Milestone 2: Database and Authentication Setup**
 
-- [ ] **Integrate Prisma with Neon.tech PostgreSQL database**
-- [ ] **Design database schema**
-  - [ ] Users table with roles (submitter, approver, admin)
-  - [ ] Documents table with fields: name, type, description, department, status
-- [ ] **Implement local authentication system**
-  - [ ] Set up user registration and login
-  - [ ] Implement RBAC (Role-Based Access Control)
+- [x] **Integrate Prisma with Neon.tech PostgreSQL database**
+- [x] **Design database schema**
+  - [x] Users table with roles (submitter, approver, admin)
+  - [x] Documents table with fields: name, type, description, department, status
+- [x] **Implement local authentication system**
+  - [x] Set up user registration and login
+  - [x] Implement RBAC (Role-Based Access Control)
 
 **Description:**
 
@@ -36,6 +36,27 @@
 - Implement authentication and role-based access control.
 
 **Deploy and Test:** Once users can register, log in, and roles are assigned, deploy to allow for testing of authentication and basic data interactions.
+
+---
+
+## **Milestone 2.5: Database Seeding**
+
+- [ ] **Create seed.ts script with faker data**
+  - [ ] Implement --use-faker flag for generating realistic data
+  - [ ] Add --count flag for specifying number of records
+  - [ ] Add --clear flag for clearing existing data (false by default)
+  - [ ] Generate users with different roles
+  - [ ] Generate documents with various statuses
+  - [ ] Ensure proper relationships between users and documents
+
+**Description:**
+
+- Create a flexible seeding system using faker.js
+- Allow for easy testing with different data volumes
+- Support development and testing scenarios
+- Maintain referential integrity in generated data
+
+**Test:** Verify seeding works with different flag combinations and generates valid data that can be used in the application.
 
 ---
 
