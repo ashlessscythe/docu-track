@@ -6,10 +6,12 @@ export default function AuthenticatedLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <Header />
-      <main className="mx-auto max-w-7xl p-4">
-        <div className="rounded-lg bg-white p-6 shadow-sm">{children}</div>
+      <main className="mx-auto max-w-7xl p-4 md:p-6">
+        <div className="rounded-lg bg-background border shadow-sm">
+          {children}
+        </div>
       </main>
     </div>
   );

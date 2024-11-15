@@ -142,6 +142,8 @@
 
 - [ ] **Develop admin panel**
   - [ ] User management (CRUD operations)
+  - [ ] Department Management
+  - [ ] Document Types management
   - [ ] Database operations (backup, restore)
   - [ ] Reporting tools
 

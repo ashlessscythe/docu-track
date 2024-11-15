@@ -102,13 +102,16 @@ export function DocumentSubmissionForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-4 font-sans"
+      >
         <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Document Name</FormLabel>
+              <FormLabel className="font-medium">Document Name</FormLabel>
               <FormControl>
                 <Input placeholder="Enter document name" {...field} />
               </FormControl>
@@ -122,14 +125,14 @@ export function DocumentSubmissionForm({
           name="type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Document Type</FormLabel>
+              <FormLabel className="font-medium">Document Type</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background text-foreground border border-border rounded-md shadow-sm">
                     <SelectValue placeholder="Select document type" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
                   <SelectItem value="Report">Report</SelectItem>
                   <SelectItem value="Proposal">Proposal</SelectItem>
                   <SelectItem value="Contract">Contract</SelectItem>
@@ -147,7 +150,7 @@ export function DocumentSubmissionForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel className="font-medium">Description</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Enter document description"
@@ -165,14 +168,14 @@ export function DocumentSubmissionForm({
           name="department"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Department</FormLabel>
+              <FormLabel className="font-medium">Department</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background text-foreground border border-border rounded-md shadow-sm">
                     <SelectValue placeholder="Select department" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
+                <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
                   <SelectItem value="Engineering">Engineering</SelectItem>
                   <SelectItem value="Finance">Finance</SelectItem>
                   <SelectItem value="HR">Human Resources</SelectItem>
@@ -188,7 +191,7 @@ export function DocumentSubmissionForm({
         />
 
         <FormItem>
-          <FormLabel>Document File</FormLabel>
+          <FormLabel className="font-medium">Document File</FormLabel>
           <FormControl>
             <Input
               type="file"
@@ -212,7 +215,7 @@ export function DocumentSubmissionForm({
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-black text-white hover:bg-black/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {isSubmitting ? "Submitting..." : "Submit Document"}
           </Button>

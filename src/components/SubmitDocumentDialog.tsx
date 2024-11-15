@@ -30,11 +30,11 @@ export function SubmitDocumentDialog({ onSuccess }: SubmitDocumentDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-black text-white hover:bg-black/90">
+        <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
           Submit New Document
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto font-sans">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             Submit Document

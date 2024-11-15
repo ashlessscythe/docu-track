@@ -125,9 +125,11 @@ export function ViewDocumentDialog({
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <button className="text-sm font-medium hover:underline">View</button>
+          <button className="text-sm font-medium text-primary hover:underline">
+            View
+          </button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] font-sans">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
               Document Details
@@ -207,7 +209,7 @@ export function ViewDocumentDialog({
               <Button
                 onClick={handleDownload}
                 disabled={downloading}
-                className="bg-black text-white hover:bg-black/90"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {downloading ? "Downloading..." : "Download"}
               </Button>
@@ -217,7 +219,7 @@ export function ViewDocumentDialog({
       </Dialog>
 
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
-        <AlertDialogContent>
+        <AlertDialogContent className="font-sans">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -229,7 +231,7 @@ export function ViewDocumentDialog({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>

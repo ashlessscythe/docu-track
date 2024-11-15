@@ -26,13 +26,13 @@ interface Document {
 const getStatusColor = (status: string) => {
   switch (status) {
     case "APPROVED":
-      return "text-green-600";
+      return "text-emerald-600 dark:text-emerald-400 font-semibold";
     case "REJECTED":
-      return "text-red-600";
+      return "text-destructive font-semibold";
     case "NEEDS_REVIEW":
-      return "text-orange-600";
+      return "text-primary font-semibold";
     default:
-      return "text-blue-600";
+      return "text-primary font-semibold";
   }
 };
 
@@ -55,16 +55,16 @@ const formatDate = (dateString: string) => {
 
 function DocumentsTableSkeleton() {
   return (
-    <div className="rounded-md border">
+    <div>
       <Table>
         <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead>Name</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Department</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Submitted</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+          <TableRow>
+            <TableHead className="w-[200px]">Name</TableHead>
+            <TableHead className="w-[120px]">Type</TableHead>
+            <TableHead className="w-[140px]">Department</TableHead>
+            <TableHead className="w-[120px]">Status</TableHead>
+            <TableHead className="w-[120px]">Submitted</TableHead>
+            <TableHead className="w-[80px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -128,43 +128,56 @@ export default function SubmitterPage() {
 
   if (error) {
     return (
-      <div className="container py-6">
-        <div className="text-red-600">Error: {error}</div>
+      <div className="p-6">
+        <div className="rounded-lg bg-destructive/10 border-destructive/20 border p-4 text-destructive">
+          Error: {error}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold">My Documents</h1>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-semibold tracking-tight">My Documents</h1>
         <SubmitDocumentDialog onSuccess={fetchDocuments} />
       </div>
 
       {loading ? (
         <DocumentsTableSkeleton />
       ) : (
-        <div className="rounded-md border">
+        <div>
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Submitted</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow>
+                <TableHead className="w-[200px] font-semibold">Name</TableHead>
+                <TableHead className="w-[120px] font-semibold">Type</TableHead>
+                <TableHead className="w-[140px] font-semibold">
+                  Department
+                </TableHead>
+                <TableHead className="w-[120px] font-semibold">
+                  Status
+                </TableHead>
+                <TableHead className="w-[120px] font-semibold">
+                  Submitted
+                </TableHead>
+                <TableHead className="w-[80px] text-right font-semibold">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {documents.map((doc) => (
-                <TableRow key={doc.id}>
+                <TableRow
+                  key={doc.id}
+                  className="hover:bg-muted/50 transition-colors"
+                >
                   <TableCell className="font-medium">{doc.name}</TableCell>
                   <TableCell>{doc.type}</TableCell>
                   <TableCell>{doc.department}</TableCell>
                   <TableCell>
                     <span
-                      className={`${getStatusColor(doc.status)} font-medium`}
+                      className={`inline-block ${getStatusColor(doc.status)}`}
                     >
                       {formatStatus(doc.status)}
                     </span>
@@ -182,7 +195,7 @@ export default function SubmitterPage() {
                 <TableRow>
                   <TableCell
                     colSpan={6}
-                    className="text-center py-4 text-muted-foreground"
+                    className="h-24 text-center text-muted-foreground"
                   >
                     No documents submitted yet
                   </TableCell>

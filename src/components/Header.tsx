@@ -2,16 +2,20 @@
 
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useTheme } from "./theme-provider";
+import { Button } from "./ui/button";
+import { Moon, Sun } from "lucide-react";
 
 export function Header() {
   const { data: session } = useSession();
+  const { theme, setTheme } = useTheme();
 
   return (
-    <header className="bg-white shadow">
-      <nav className="container mx-auto px-4 py-3">
+    <header className="bg-background border-b">
+      <nav className="container mx-auto px-4 py-3 flex justify-between items-center">
         <ul className="flex space-x-4">
           <li>
-            <Link href="/" className="text-gray-600 hover:text-gray-900">
+            <Link href="/" className="text-foreground hover:text-foreground/80">
               Home
             </Link>
           </li>
@@ -20,7 +24,7 @@ export function Header() {
               <li>
                 <Link
                   href="/dashboard"
-                  className="text-gray-600 hover:text-gray-900"
+                  className="text-foreground hover:text-foreground/80"
                 >
                   Dashboard
                 </Link>
@@ -29,7 +33,7 @@ export function Header() {
                 <li>
                   <Link
                     href="/admin"
-                    className="text-gray-600 hover:text-gray-900"
+                    className="text-foreground hover:text-foreground/80"
                   >
                     Admin
                   </Link>
@@ -40,7 +44,7 @@ export function Header() {
                 <li>
                   <Link
                     href="/approver"
-                    className="text-gray-600 hover:text-gray-900"
+                    className="text-foreground hover:text-foreground/80"
                   >
                     Approver
                   </Link>
@@ -51,33 +55,48 @@ export function Header() {
                 <li>
                   <Link
                     href="/submitter"
-                    className="text-gray-600 hover:text-gray-900"
+                    className="text-foreground hover:text-foreground/80"
                   >
                     Submitter
                   </Link>
                 </li>
               )}
-              <li>
-                <Link
-                  href="/signout"
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  Sign Out
-                </Link>
-              </li>
             </>
           )}
           {!session && (
             <li>
               <Link
                 href="/signin"
-                className="text-gray-600 hover:text-gray-900"
+                className="text-foreground hover:text-foreground/80"
               >
                 Sign In
               </Link>
             </li>
           )}
         </ul>
+        {session && (
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            >
+              {theme === "light" ? (
+                <Moon className="h-5 w-5" />
+              ) : (
+                <Sun className="h-5 w-5" />
+              )}
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+            <Link
+              href="/signout"
+              className="border rounded px-2 py-1 text-white bg-red-600 hover:bg-red-700 transition-colors 
+             dark:bg-red-500 dark:hover:bg-red-600"
+            >
+              Sign Out
+            </Link>
+          </div>
+        )}
       </nav>
     </header>
   );
