@@ -149,12 +149,12 @@
 
 ## **Milestone 7: Admin Panel Development**
 
-- [ ] **Develop admin panel**
-  - [ ] User management (CRUD operations)
-  - [ ] Department Management
-  - [ ] Document Types management
-  - [ ] Database operations (backup, restore)
-  - [ ] Reporting tools
+- [x] **Develop admin panel**
+  - [x] User management (CRUD operations)
+  - [x] Department Management
+  - [x] Document Types management
+  - [x] Database operations (backup, restore)
+  - [x] Reporting tools
 
 **Description:**
 
