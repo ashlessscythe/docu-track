@@ -120,7 +120,7 @@ export default function SubmitterPage() {
   const fetchDocuments = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/documents");
+      const response = await fetch("/api/documents/user");
       if (!response.ok) {
         if (response.status === 401) {
           router.push("/unauthorized");

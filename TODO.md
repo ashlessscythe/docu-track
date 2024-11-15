@@ -120,8 +120,8 @@
 
 ## **Milestone 5: Submitter Dashboard**
 
-- [ ] **Create submitter dashboard**
-  - [ ] View their own submissions and statuses
+- [x] **Create submitter dashboard**
+  - [x] View their own submissions and statuses
 
 **Description:**
 
