@@ -25,31 +25,49 @@ enum DocumentStatus {
 }
 
 model User {
-  id            String     @id @default(cuid())
-  email         String     @unique
+  id            String       @id @default(cuid())
+  email         String       @unique
   name          String
   password      String
   role          UserRole
-  department    String?    // Optional for submitters and admins
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  documents     Document[] @relation("SubmittedDocuments")
-  approvals     Document[] @relation("DocumentApprovals")
+  departmentId  String?      // Foreign key to the Department table
+  department    Department?  @relation(fields: [departmentId], references: [id])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  documents     Document[]   @relation("SubmittedDocuments")
+  approvals     Document[]   @relation("DocumentApprovals")
+}
+
+model Department {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String?
+  users       User[]       @relation
+  documents   Document[]   @relation
+}
+
+model DocumentType {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String?
+  documents   Document[]   @relation
 }
 
 model Document {
-  id          String         @id @default(cuid())
-  name        String
-  type        String
-  description String
-  department  String
-  status      DocumentStatus @default(PENDING)
-  content     Bytes         // Document content stored as bytes
-  mimeType    String        // MIME type of the file
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  submitter   User          @relation("SubmittedDocuments", fields: [submitterId], references: [id])
-  submitterId String
-  approver    User?         @relation("DocumentApprovals", fields: [approverId], references: [id])
-  approverId  String?
+  id            String         @id @default(cuid())
+  name          String
+  typeId        String          // Foreign key to the DocumentType table
+  type          DocumentType   @relation(fields: [typeId], references: [id])
+  description   String
+  departmentId  String?         // Foreign key to the Department table
+  department    Department?     @relation(fields: [departmentId], references: [id])
+  status        DocumentStatus  @default(PENDING)
+  content       Bytes           // Document content stored as bytes
+  mimeType      String          // MIME type of the file
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  submitter     User            @relation("SubmittedDocuments", fields: [submitterId], references: [id])
+  submitterId   String
+  approver      User?           @relation("DocumentApprovals", fields: [approverId], references: [id])
+  approverId    String?
 }

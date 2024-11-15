@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { APP_NAME } from "@/lib/config";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -45,7 +44,7 @@ export default function RegisterPage() {
     }
 
     try {
-      const response = await fetch("/register", {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -96,7 +95,7 @@ export default function RegisterPage() {
 
       <div className="w-full max-w-md space-y-8 px-4 py-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold">Register for {APP_NAME}</h2>
+          <h2 className="text-3xl font-bold">Create Account</h2>
           <p className="mt-2 text-sm text-gray-600">
             Create your account to get started
           </p>

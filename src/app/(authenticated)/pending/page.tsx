@@ -28,20 +28,31 @@ export default async function PendingPage() {
   }
 
   return (
-    <>
-      <h1 className="mb-4 text-2xl font-bold text-gray-900">
-        Account Pending Approval
-      </h1>
-      <div className="text-gray-600">
-        <p className="mb-4">
-          Your account is currently pending administrator approval. You will be
-          notified once your account has been approved.
-        </p>
-        <p>
-          Please check back later or contact your administrator if you have any
-          questions.
-        </p>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto bg-muted p-8 rounded-lg shadow-md">
+        <h1 className="mb-4 text-2xl font-bold text-primary">
+          Account Pending Approval
+        </h1>
+        <div className="text-primary space-y-4">
+          <p>
+            Your account is currently pending administrator approval. Once
+            approved, you will be:
+          </p>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>Assigned to a department</li>
+            <li>Given appropriate access permissions</li>
+            <li>Able to submit and manage documents</li>
+          </ul>
+          <p>You will be notified once your account has been approved.</p>
+          <div className="mt-6 p-4 bg-background rounded-md border border-border">
+            <ul className="list-disc pl-5 space-y-2 text-foreground">
+              <li>Ensure your profile information is accurate</li>
+              <li>Review the system documentation</li>
+              <li>Contact your administrator if you have any questions</li>
+            </ul>
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

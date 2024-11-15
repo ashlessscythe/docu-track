@@ -51,7 +51,8 @@ export default withAuth(
         if (
           req.nextUrl.pathname === "/" ||
           req.nextUrl.pathname.startsWith("/signin") ||
-          req.nextUrl.pathname.startsWith("/register")
+          req.nextUrl.pathname.startsWith("/register") ||
+          req.nextUrl.pathname.startsWith("/api/auth")
         ) {
           return true;
         }
@@ -71,5 +72,6 @@ export const config = {
     "/submitter/:path*",
     "/pending/:path*",
     "/unauthorized",
+    "/api/:path*",
   ],
 };

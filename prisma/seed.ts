@@ -41,7 +41,12 @@ const parseArgs = async (): Promise<SeedArgs> => {
 
 // Generate a random role
 const getRandomRole = (): UserRole => {
-  const roles = [UserRole.SUBMITTER, UserRole.APPROVER, UserRole.ADMIN];
+  const roles = [
+    UserRole.SUBMITTER,
+    UserRole.APPROVER,
+    UserRole.ADMIN,
+    UserRole.PENDING,
+  ];
   return roles[Math.floor(Math.random() * roles.length)];
 };
 
@@ -50,17 +55,44 @@ const hashPassword = async (password: string): Promise<string> => {
   return await bcrypt.hash(password, 10);
 };
 
+// Default departments
+const defaultDepartments = [
+  { name: "IT", description: "Information Technology Department" },
+  { name: "HR", description: "Human Resources Department" },
+  { name: "Engineering", description: "Engineering Department" },
+  { name: "Finance", description: "Finance Department" },
+  { name: "Marketing", description: "Marketing Department" },
+];
+
+// Default document types
+const defaultDocumentTypes = [
+  { name: "PDF", description: "Portable Document Format" },
+  { name: "DOCX", description: "Microsoft Word Document" },
+  { name: "TXT", description: "Plain Text Document" },
+  { name: "XLS", description: "Microsoft Excel Spreadsheet" },
+];
+
 // Generate fake user data
-const createFakeUser = async () => ({
-  email: faker.internet.email(),
-  name: faker.person.fullName(),
-  role: getRandomRole(),
-  password: await hashPassword(faker.internet.password()),
-  department: faker.commerce.department(),
-});
+const createFakeUser = async (departmentIds: string[]) => {
+  const role = getRandomRole();
+  return {
+    email: faker.internet.email(),
+    name: faker.person.fullName(),
+    role,
+    password: await hashPassword(faker.internet.password()),
+    departmentId:
+      role === UserRole.PENDING
+        ? null
+        : faker.helpers.arrayElement(departmentIds),
+  };
+};
 
 // Generate fake document data
-const createFakeDocument = (userId: string) => {
+const createFakeDocument = (
+  userId: string,
+  departmentIds: string[],
+  documentTypeIds: string[]
+) => {
   // Generate random content as Bytes
   const content = Buffer.from(faker.lorem.paragraphs());
 
@@ -78,15 +110,10 @@ const createFakeDocument = (userId: string) => {
 
   return {
     name: `${faker.system.fileName()}.${fileType.ext}`,
-    type: fileType.ext.toUpperCase(),
+    typeId: faker.helpers.arrayElement(documentTypeIds),
     description: faker.lorem.paragraph(),
-    department: faker.commerce.department(),
-    status: faker.helpers.arrayElement([
-      DocumentStatus.PENDING,
-      DocumentStatus.APPROVED,
-      DocumentStatus.REJECTED,
-      DocumentStatus.NEEDS_REVIEW,
-    ]),
+    departmentId: faker.helpers.arrayElement(departmentIds),
+    status: DocumentStatus.PENDING,
     content,
     mimeType: fileType.mime,
     submitterId: userId,
@@ -99,44 +126,25 @@ const defaultUsers = [
     email: "bob@bob.bob",
     name: "Bob",
     role: UserRole.ADMIN,
-    password: "bob", // Will be hashed before saving
-    department: "IT",
+    password: "bob",
   },
   {
     email: "approver@example.com",
     name: "Approver User",
     role: UserRole.APPROVER,
     password: "approver123",
-    department: "HR",
   },
   {
     email: "submitter@example.com",
     name: "Submitter User",
     role: UserRole.SUBMITTER,
     password: "submitter123",
-    department: "Engineering",
-  },
-];
-
-const defaultDocuments = [
-  {
-    name: "Sample Document 1.pdf",
-    type: "PDF",
-    description: "A sample document for testing",
-    department: "IT",
-    status: DocumentStatus.PENDING,
-    content: Buffer.from("Sample document content 1"),
-    mimeType: "application/pdf",
   },
   {
-    name: "Sample Document 2.docx",
-    type: "DOCX",
-    description: "Another sample document",
-    department: "HR",
-    status: DocumentStatus.APPROVED,
-    content: Buffer.from("Sample document content 2"),
-    mimeType:
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    email: "pending@example.com",
+    name: "Pending User",
+    role: UserRole.PENDING,
+    password: "pending123",
   },
 ];
 
@@ -153,7 +161,25 @@ async function main() {
     console.log("Clearing existing data...");
     await prisma.document.deleteMany();
     await prisma.user.deleteMany();
+    await prisma.department.deleteMany();
+    await prisma.documentType.deleteMany();
   }
+
+  // Create departments
+  console.log("Creating departments...");
+  const departments = await Promise.all(
+    defaultDepartments.map((dept) => prisma.department.create({ data: dept }))
+  );
+  const departmentIds = departments.map((d) => d.id);
+
+  // Create document types
+  console.log("Creating document types...");
+  const documentTypes = await Promise.all(
+    defaultDocumentTypes.map((type) =>
+      prisma.documentType.create({ data: type })
+    )
+  );
+  const documentTypeIds = documentTypes.map((d) => d.id);
 
   if (args["use-faker"]) {
     console.log(`Generating ${args.count} fake records...`);
@@ -161,7 +187,7 @@ async function main() {
     // Create users
     const users = await Promise.all(
       Array.from({ length: args.count }, async () => {
-        const userData = await createFakeUser();
+        const userData = await createFakeUser(departmentIds);
         return await prisma.user.create({ data: userData });
       })
     );
@@ -171,12 +197,19 @@ async function main() {
 
     await Promise.all(
       users
-        .filter((user) => user.role === UserRole.SUBMITTER)
+        .filter(
+          (user) =>
+            user.role === UserRole.SUBMITTER || user.role === UserRole.PENDING
+        )
         .flatMap((user) =>
           Array.from(
             { length: Math.floor(Math.random() * 5) + 1 },
             async () => {
-              const documentData = createFakeDocument(user.id);
+              const documentData = createFakeDocument(
+                user.id,
+                departmentIds,
+                documentTypeIds
+              );
               // Randomly assign an approver to some documents
               if (approvers.length > 0 && Math.random() > 0.5) {
                 const approver = faker.helpers.arrayElement(approvers);
@@ -203,23 +236,45 @@ async function main() {
           data: {
             ...userData,
             password: hashedPassword,
+            departmentId:
+              userData.role === UserRole.PENDING
+                ? null
+                : faker.helpers.arrayElement(departmentIds),
           },
         });
       })
     );
 
-    // Create default documents
-    await Promise.all(
-      defaultDocuments.map(async (doc) => {
-        return await prisma.document.create({
-          data: {
-            ...doc,
-            submitterId: users[2].id, // Assign to submitter user
-            approverId: users[1].id, // Assign to approver user
-          },
-        });
-      })
-    );
+    // Create some default documents
+    await Promise.all([
+      prisma.document.create({
+        data: {
+          name: "Sample Document 1.pdf",
+          typeId: documentTypes[0].id, // PDF type
+          description: "A sample document for testing",
+          departmentId: departments[0].id, // IT department
+          status: DocumentStatus.PENDING,
+          content: Buffer.from("Sample document content 1"),
+          mimeType: "application/pdf",
+          submitterId: users[2].id, // Assign to submitter user
+          approverId: users[1].id, // Assign to approver user
+        },
+      }),
+      prisma.document.create({
+        data: {
+          name: "Sample Document 2.docx",
+          typeId: documentTypes[1].id, // DOCX type
+          description: "Another sample document",
+          departmentId: departments[1].id, // HR department
+          status: DocumentStatus.APPROVED,
+          content: Buffer.from("Sample document content 2"),
+          mimeType:
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          submitterId: users[2].id, // Assign to submitter user
+          approverId: users[1].id, // Assign to approver user
+        },
+      }),
+    ]);
   }
 
   console.log("Seeding completed!");

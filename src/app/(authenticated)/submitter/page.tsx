@@ -13,12 +13,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+interface Department {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+interface DocumentType {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
 interface Document {
   id: string;
   name: string;
-  type: string;
+  type: DocumentType;
   description: string;
-  department: string;
+  department: Department | null;
   status: string;
   createdAt: string;
 }
@@ -173,8 +185,8 @@ export default function SubmitterPage() {
                   className="hover:bg-muted/50 transition-colors"
                 >
                   <TableCell className="font-medium">{doc.name}</TableCell>
-                  <TableCell>{doc.type}</TableCell>
-                  <TableCell>{doc.department}</TableCell>
+                  <TableCell>{doc.type.name}</TableCell>
+                  <TableCell>{doc.department?.name ?? "Pending"}</TableCell>
                   <TableCell>
                     <span
                       className={`inline-block ${getStatusColor(doc.status)}`}

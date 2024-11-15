@@ -21,13 +21,25 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+interface Department {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+interface DocumentType {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
 interface ViewDocumentDialogProps {
   document: {
     id: string;
     name: string;
-    type: string;
+    type: DocumentType;
     description: string;
-    department: string;
+    department: Department | null;
     status: string;
     createdAt: string;
   };
@@ -150,13 +162,13 @@ export function ViewDocumentDialog({
                 <h4 className="text-sm font-medium text-muted-foreground">
                   Type
                 </h4>
-                <p className="mt-1">{document.type}</p>
+                <p className="mt-1">{document.type.name}</p>
               </div>
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground">
                   Department
                 </h4>
-                <p className="mt-1">{document.department}</p>
+                <p className="mt-1">{document.department?.name ?? "Pending"}</p>
               </div>
             </div>
 

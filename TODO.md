@@ -25,6 +25,8 @@
 - [x] **Design database schema**
   - [x] Users table with roles (submitter, approver, admin)
   - [x] Documents table with fields: name, type, description, department, status
+  - [x] Add departments and document types tables
+  - [x] Update schema for PENDING users with null departments
 - [x] **Implement local authentication system**
   - [x] Set up user registration and login
   - [x] Implement RBAC (Role-Based Access Control)
@@ -57,6 +59,8 @@
   - [x] Generate users with different roles
   - [x] Generate documents with various statuses
   - [x] Ensure proper relationships between users and documents
+  - [x] Add support for PENDING users with null departments
+  - [x] Add departments and document types seeding
 
 **Description:**
 
@@ -82,6 +86,8 @@
     - [x] Replace/update documents
   - [x] Real-time document list updates
   - [x] Loading states and error handling
+  - [x] Support for PENDING users submitting without department
+  - [x] Dynamic department and document type selection
 
 **Description:**
 

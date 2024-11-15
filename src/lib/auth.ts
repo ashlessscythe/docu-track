@@ -17,6 +17,7 @@ interface ExtendedSession extends Session {
     email?: string | null;
     name?: string | null;
     role: UserRole;
+    departmentId?: string | null;
   };
   error?: "RefetchUser";
 }
@@ -25,6 +26,7 @@ interface ExtendedSession extends Session {
 interface ExtendedJWT extends JWT {
   id: string;
   role: UserRole;
+  departmentId?: string | null;
   updatedAt: number;
   error?: "RefetchUser";
 }
@@ -33,6 +35,7 @@ interface ExtendedJWT extends JWT {
 interface ExtendedUser extends NextAuthUser {
   id: string;
   role: UserRole;
+  departmentId?: string | null;
   updatedAt: number;
 }
 
@@ -81,6 +84,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          departmentId: user.departmentId,
           updatedAt: user.updatedAt.getTime(),
         };
       },
@@ -102,6 +106,7 @@ export const authOptions: NextAuthOptions = {
         return {
           ...token,
           role: latestUser.role,
+          departmentId: latestUser.departmentId,
           updatedAt: latestUser.updatedAt.getTime(),
         } as JWT;
       }
@@ -111,6 +116,7 @@ export const authOptions: NextAuthOptions = {
           ...token,
           id: user.id,
           role: (user as ExtendedUser).role,
+          departmentId: (user as ExtendedUser).departmentId,
           updatedAt: (user as ExtendedUser).updatedAt,
         } as JWT;
       }
@@ -145,6 +151,7 @@ export const authOptions: NextAuthOptions = {
           ...session.user,
           id: token.id,
           role: (token as ExtendedJWT).role,
+          departmentId: (token as ExtendedJWT).departmentId,
         },
       } as ExtendedSession;
     },

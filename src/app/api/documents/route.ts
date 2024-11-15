@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { DocumentStatus } from "@prisma/client";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -15,9 +18,23 @@ export async function GET() {
       where:
         session.user.role === "ADMIN"
           ? {}
+          : session.user.role === "APPROVER" && session.user.departmentId
+          ? {
+              departmentId: session.user.departmentId,
+            }
           : {
               submitterId: session.user.id,
             },
+      include: {
+        submitter: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+        department: true,
+        type: true,
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -40,12 +57,12 @@ export async function POST(req: Request) {
 
     const formData = await req.formData();
     const name = formData.get("name") as string;
-    const type = formData.get("type") as string;
+    const typeId = formData.get("typeId") as string;
     const description = formData.get("description") as string;
-    const department = formData.get("department") as string;
+    const departmentId = formData.get("departmentId") as string | null;
     const file = formData.get("file") as Blob;
 
-    if (!name || !type || !description || !department || !file) {
+    if (!name || !typeId || !description || !file) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
 
@@ -55,17 +72,17 @@ export async function POST(req: Request) {
     const document = await prisma.document.create({
       data: {
         name,
-        type,
+        typeId,
         description,
-        department,
-        status: "PENDING",
+        departmentId: session.user.role === "PENDING" ? null : departmentId,
+        status: DocumentStatus.PENDING,
         content: buffer,
         mimeType: file.type,
-        submitter: {
-          connect: {
-            id: session.user.id,
-          },
-        },
+        submitterId: session.user.id,
+      },
+      include: {
+        department: true,
+        type: true,
       },
     });
 

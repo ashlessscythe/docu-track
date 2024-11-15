@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,12 +23,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+
+interface Department {
+  id: string;
+  name: string;
+}
+
+interface DocumentType {
+  id: string;
+  name: string;
+}
 
 const formSchema = z.object({
   name: z.string().min(1, "Document name is required"),
-  type: z.string().min(1, "Document type is required"),
+  typeId: z.string().min(1, "Document type is required"),
   description: z.string().min(1, "Description is required"),
-  department: z.string().min(1, "Department is required"),
+  departmentId: z.string().optional(),
 });
 
 interface DocumentSubmissionFormProps {
@@ -40,17 +51,45 @@ export function DocumentSubmissionForm({
 }: DocumentSubmissionFormProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
   const router = useRouter();
+  const { data: session } = useSession();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      type: "",
+      typeId: "",
       description: "",
-      department: "",
+      departmentId: undefined,
     },
   });
+
+  // Fetch departments and document types
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch departments
+        const deptResponse = await fetch("/api/departments");
+        if (deptResponse.ok) {
+          const deptData = await deptResponse.json();
+          setDepartments(deptData);
+        }
+
+        // Fetch document types
+        const typeResponse = await fetch("/api/document-types");
+        if (typeResponse.ok) {
+          const typeData = await typeResponse.json();
+          setDocumentTypes(typeData);
+        }
+      } catch (error) {
+        console.error("Error fetching form data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!file) {
@@ -65,9 +104,11 @@ export function DocumentSubmissionForm({
 
       const formData = new FormData();
       formData.append("name", values.name);
-      formData.append("type", values.type);
+      formData.append("typeId", values.typeId);
       formData.append("description", values.description);
-      formData.append("department", values.department);
+      if (values.departmentId && session?.user.role !== "PENDING") {
+        formData.append("departmentId", values.departmentId);
+      }
       formData.append("file", file);
 
       const response = await fetch("/api/documents", {
@@ -122,7 +163,7 @@ export function DocumentSubmissionForm({
 
         <FormField
           control={form.control}
-          name="type"
+          name="typeId"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="font-medium">Document Type</FormLabel>
@@ -133,11 +174,11 @@ export function DocumentSubmissionForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
-                  <SelectItem value="Report">Report</SelectItem>
-                  <SelectItem value="Proposal">Proposal</SelectItem>
-                  <SelectItem value="Contract">Contract</SelectItem>
-                  <SelectItem value="Invoice">Invoice</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
+                  {documentTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -163,32 +204,35 @@ export function DocumentSubmissionForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="department"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="font-medium">Department</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger className="bg-background text-foreground border border-border rounded-md shadow-sm">
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
-                  <SelectItem value="Engineering">Engineering</SelectItem>
-                  <SelectItem value="Finance">Finance</SelectItem>
-                  <SelectItem value="HR">Human Resources</SelectItem>
-                  <SelectItem value="Legal">Legal</SelectItem>
-                  <SelectItem value="Marketing">Marketing</SelectItem>
-                  <SelectItem value="Operations">Operations</SelectItem>
-                  <SelectItem value="Sales">Sales</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {session?.user.role !== "PENDING" && (
+          <FormField
+            control={form.control}
+            name="departmentId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="font-medium">Department</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger className="bg-background text-foreground border border-border rounded-md shadow-sm">
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormItem>
           <FormLabel className="font-medium">Document File</FormLabel>
