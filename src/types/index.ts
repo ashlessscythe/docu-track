@@ -1,17 +1,25 @@
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  role: "ADMIN" | "APPROVER" | "SUBMITTER" | "PENDING";
-  department?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-};
+export enum UserRole {
+  SUBMITTER = "SUBMITTER",
+  APPROVER = "APPROVER",
+  ADMIN = "ADMIN",
+  PENDING = "PENDING",
+}
 
 export type Department = {
   id: string;
   name: string;
   description?: string;
+};
+
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  department?: Department;
+  departmentId?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 export type DocumentType = {

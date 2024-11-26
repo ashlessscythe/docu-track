@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,12 @@ export async function GET() {
         name: true,
         email: true,
         role: true,
-        department: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -41,9 +47,9 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, email, password, role, department } = body;
+    const { name, email, password, role, departmentId } = body;
 
-    if (!name || !email || !role) {
+    if (!name || !email || !password || !role) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
 
@@ -57,13 +63,28 @@ export async function POST(request: Request) {
       });
     }
 
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
     const user = await prisma.user.create({
       data: {
         name,
         email,
-        password,
+        password: hashedPassword,
         role,
-        department: department || null,
+        departmentId: departmentId || null,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 

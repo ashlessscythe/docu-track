@@ -26,20 +26,26 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { User } from "@/types";
+import { User, UserRole, Department } from "@/types";
 
 export default function UsersManagement() {
   const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [newPassword, setNewPassword] = useState("");
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
+    password: "",
     role: "",
-    department: "",
+    departmentId: "",
   });
 
   useEffect(() => {
     fetchUsers();
+    fetchDepartments();
   }, []);
 
   const fetchUsers = async () => {
@@ -49,6 +55,16 @@ export default function UsersManagement() {
       setUsers(data);
     } catch (error) {
       console.error("Failed to fetch users:", error);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await fetch("/api/admin/departments");
+      const data = await response.json();
+      setDepartments(data);
+    } catch (error) {
+      console.error("Failed to fetch departments:", error);
     }
   };
 
@@ -65,14 +81,20 @@ export default function UsersManagement() {
       if (response.ok) {
         setIsAddUserOpen(false);
         fetchUsers();
-        setNewUser({ name: "", email: "", role: "", department: "" });
+        setNewUser({
+          name: "",
+          email: "",
+          password: "",
+          role: "",
+          departmentId: "",
+        });
       }
     } catch (error) {
-      console.error("Failed to add user:", error);
+      console.error("Failed to create user:", error);
     }
   };
 
-  const handleUpdateUserRole = async (userId: string, newRole: string) => {
+  const handleUpdateUserRole = async (userId: string, newRole: UserRole) => {
     try {
       await fetch(`/api/admin/users/${userId}`, {
         method: "PATCH",
@@ -84,6 +106,23 @@ export default function UsersManagement() {
       fetchUsers();
     } catch (error) {
       console.error("Failed to update user role:", error);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    try {
+      await fetch(`/api/admin/users/${selectedUserId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password: newPassword }),
+      });
+      setIsResetPasswordOpen(false);
+      setNewPassword("");
+      setSelectedUserId("");
+    } catch (error) {
+      console.error("Failed to reset password:", error);
     }
   };
 
@@ -99,6 +138,24 @@ export default function UsersManagement() {
       console.error("Failed to delete user:", error);
     }
   };
+
+  const getRoleDisplay = (role: UserRole): string => {
+    return role.charAt(0) + role.slice(1).toLowerCase();
+  };
+
+  const getDepartmentDisplay = (
+    department: Department | undefined | null
+  ): string => {
+    if (!department) return "N/A";
+    return department.name;
+  };
+
+  const roleOptions = [
+    UserRole.ADMIN,
+    UserRole.APPROVER,
+    UserRole.SUBMITTER,
+    UserRole.PENDING,
+  ];
 
   return (
     <div className="container mx-auto p-6">
@@ -135,6 +192,17 @@ export default function UsersManagement() {
                 />
               </div>
               <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, password: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
                 <Label htmlFor="role">Role</Label>
                 <Select
                   value={newUser.role}
@@ -143,24 +211,45 @@ export default function UsersManagement() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
+                    <SelectValue>
+                      {newUser.role
+                        ? getRoleDisplay(newUser.role as UserRole)
+                        : "Select role"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                    <SelectItem value="APPROVER">Approver</SelectItem>
-                    <SelectItem value="SUBMITTER">Submitter</SelectItem>
+                    {roleOptions.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {getRoleDisplay(role)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="department">Department</Label>
-                <Input
-                  id="department"
-                  value={newUser.department}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, department: e.target.value })
+                <Select
+                  value={newUser.departmentId}
+                  onValueChange={(value) =>
+                    setNewUser({ ...newUser, departmentId: value })
                   }
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue>
+                      {newUser.departmentId
+                        ? departments.find((d) => d.id === newUser.departmentId)
+                            ?.name
+                        : "Select department"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="flex justify-end">
@@ -169,6 +258,28 @@ export default function UsersManagement() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={handleResetPassword}>Reset Password</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Table>
         <TableHeader>
@@ -189,21 +300,32 @@ export default function UsersManagement() {
                 <Select
                   value={user.role}
                   onValueChange={(value) =>
-                    handleUpdateUserRole(user.id, value)
+                    handleUpdateUserRole(user.id, value as UserRole)
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue>{getRoleDisplay(user.role)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ADMIN">Admin</SelectItem>
-                    <SelectItem value="APPROVER">Approver</SelectItem>
-                    <SelectItem value="SUBMITTER">Submitter</SelectItem>
+                    {roleOptions.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {getRoleDisplay(role)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </TableCell>
-              <TableCell>{user.department || "N/A"}</TableCell>
-              <TableCell>
+              <TableCell>{getDepartmentDisplay(user.department)}</TableCell>
+              <TableCell className="space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedUserId(user.id);
+                    setIsResetPasswordOpen(true);
+                  }}
+                >
+                  Reset Password
+                </Button>
                 <Button
                   variant="destructive"
                   onClick={() => handleDeleteUser(user.id)}
