@@ -11,7 +11,7 @@ export function Header() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <header className="bg-background border-b">
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <nav className="container mx-auto px-4 py-3 flex justify-between items-center">
         <ul className="flex space-x-4">
           <li>
