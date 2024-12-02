@@ -32,8 +32,9 @@ export default function UsersManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
-  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
   const [newPassword, setNewPassword] = useState("");
   const [newUser, setNewUser] = useState({
     name: "",
@@ -109,20 +110,30 @@ export default function UsersManagement() {
     }
   };
 
-  const handleResetPassword = async () => {
+  const handleEditUser = async () => {
     try {
+      const updateData: any = {};
+      if (selectedDepartmentId) {
+        updateData.departmentId = selectedDepartmentId;
+      }
+      if (newPassword) {
+        updateData.password = newPassword;
+      }
+
       await fetch(`/api/admin/users/${selectedUserId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ password: newPassword }),
+        body: JSON.stringify(updateData),
       });
-      setIsResetPasswordOpen(false);
+      setIsEditUserOpen(false);
       setNewPassword("");
       setSelectedUserId("");
+      setSelectedDepartmentId("");
+      fetchUsers();
     } catch (error) {
-      console.error("Failed to reset password:", error);
+      console.error("Failed to update user:", error);
     }
   };
 
@@ -157,6 +168,12 @@ export default function UsersManagement() {
     UserRole.PENDING,
   ];
 
+  const openEditModal = (user: User) => {
+    setSelectedUserId(user.id);
+    setSelectedDepartmentId(user.department?.id || "");
+    setIsEditUserOpen(true);
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
@@ -175,7 +192,7 @@ export default function UsersManagement() {
                 <Input
                   id="name"
                   value={newUser.name}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setNewUser({ ...newUser, name: e.target.value })
                   }
                 />
@@ -186,7 +203,7 @@ export default function UsersManagement() {
                   id="email"
                   type="email"
                   value={newUser.email}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setNewUser({ ...newUser, email: e.target.value })
                   }
                 />
@@ -197,7 +214,7 @@ export default function UsersManagement() {
                   id="password"
                   type="password"
                   value={newUser.password}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setNewUser({ ...newUser, password: e.target.value })
                   }
                 />
@@ -206,18 +223,18 @@ export default function UsersManagement() {
                 <Label htmlFor="role">Role</Label>
                 <Select
                   value={newUser.role}
-                  onValueChange={(value) =>
+                  onValueChange={(value: string) =>
                     setNewUser({ ...newUser, role: value })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background text-foreground border border-border rounded-md shadow-sm">
                     <SelectValue>
                       {newUser.role
                         ? getRoleDisplay(newUser.role as UserRole)
                         : "Select role"}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
                     {roleOptions.map((role) => (
                       <SelectItem key={role} value={role}>
                         {getRoleDisplay(role)}
@@ -230,11 +247,11 @@ export default function UsersManagement() {
                 <Label htmlFor="department">Department</Label>
                 <Select
                   value={newUser.departmentId}
-                  onValueChange={(value) =>
+                  onValueChange={(value: string) =>
                     setNewUser({ ...newUser, departmentId: value })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background text-foreground border border-border rounded-md shadow-sm">
                     <SelectValue>
                       {newUser.departmentId
                         ? departments.find((d) => d.id === newUser.departmentId)
@@ -242,7 +259,7 @@ export default function UsersManagement() {
                         : "Select department"}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
                     {departments.map((dept) => (
                       <SelectItem key={dept.id} value={dept.id}>
                         {dept.name}
@@ -259,24 +276,50 @@ export default function UsersManagement() {
         </Dialog>
       </div>
 
-      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
+      <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reset Password</DialogTitle>
+            <DialogTitle>Edit User</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="new-password">New Password</Label>
+              <Label htmlFor="edit-department">Department</Label>
+              <Select
+                value={selectedDepartmentId}
+                onValueChange={setSelectedDepartmentId}
+              >
+                <SelectTrigger className="bg-background text-foreground border border-border rounded-md shadow-sm">
+                  <SelectValue>
+                    {selectedDepartmentId
+                      ? departments.find((d) => d.id === selectedDepartmentId)
+                          ?.name
+                      : "Select department"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new-password">New Password (optional)</Label>
               <Input
                 id="new-password"
                 type="password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setNewPassword(e.target.value)
+                }
+                placeholder="Leave blank to keep current password"
               />
             </div>
           </div>
           <div className="flex justify-end">
-            <Button onClick={handleResetPassword}>Reset Password</Button>
+            <Button onClick={handleEditUser}>Save Changes</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -299,14 +342,14 @@ export default function UsersManagement() {
               <TableCell>
                 <Select
                   value={user.role}
-                  onValueChange={(value) =>
+                  onValueChange={(value: string) =>
                     handleUpdateUserRole(user.id, value as UserRole)
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background text-foreground border border-border rounded-md shadow-sm">
                     <SelectValue>{getRoleDisplay(user.role)}</SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
                     {roleOptions.map((role) => (
                       <SelectItem key={role} value={role}>
                         {getRoleDisplay(role)}
@@ -317,14 +360,8 @@ export default function UsersManagement() {
               </TableCell>
               <TableCell>{getDepartmentDisplay(user.department)}</TableCell>
               <TableCell className="space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedUserId(user.id);
-                    setIsResetPasswordOpen(true);
-                  }}
-                >
-                  Reset Password
+                <Button variant="outline" onClick={() => openEditModal(user)}>
+                  Edit
                 </Button>
                 <Button
                   variant="destructive"
