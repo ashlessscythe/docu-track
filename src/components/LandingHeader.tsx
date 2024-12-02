@@ -31,9 +31,14 @@ export function LandingHeader({ session, appName }: LandingHeaderProps) {
             <span className="sr-only">Toggle theme</span>
           </Button>
           {session ? (
-            <Link href="/dashboard">
-              <Button>Go to Dashboard</Button>
-            </Link>
+            <>
+              <Link href="/dashboard">
+                <Button>Go to Dashboard</Button>
+              </Link>
+              <Link href="/signout">
+                <Button variant="destructive">Sign Out</Button>
+              </Link>
+            </>
           ) : (
             <>
               <Link href="/signin">
