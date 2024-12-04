@@ -91,6 +91,7 @@ export default function ApproverPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [departmentName, setDepartmentName] = useState<string>("");
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -99,8 +100,24 @@ export default function ApproverPage() {
         return;
       }
       fetchDocuments();
+      if (session.user.departmentId) {
+        fetchDepartmentName();
+      }
     }
-  }, [status, session?.user.role]);
+  }, [status, session?.user.role, session?.user.departmentId]);
+
+  const fetchDepartmentName = async () => {
+    try {
+      const response = await fetch(
+        `/api/departments/${session?.user.departmentId}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch department");
+      const data = await response.json();
+      setDepartmentName(data.name);
+    } catch (error) {
+      console.error("Error fetching department:", error);
+    }
+  };
 
   const fetchDocuments = async () => {
     try {
@@ -215,7 +232,7 @@ export default function ApproverPage() {
         <h1 className="text-3xl font-semibold tracking-tight">
           {session.user.role === "ADMIN"
             ? "All Documents"
-            : "Department Documents"}
+            : `${departmentName} Department Documents`}
         </h1>
       </div>
 

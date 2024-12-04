@@ -75,11 +75,12 @@ const defaultDocumentTypes = [
 // Generate fake user data
 const createFakeUser = async (departmentIds: string[]) => {
   const role = getRandomRole();
+  const password = `${role.toLowerCase()}pass`;
   return {
     email: faker.internet.email(),
     name: faker.person.fullName(),
     role,
-    password: await hashPassword(faker.internet.password()),
+    password: await hashPassword(password),
     departmentId:
       role === UserRole.PENDING
         ? null
@@ -126,25 +127,25 @@ const defaultUsers = [
     email: "bob@bob.bob",
     name: "Bob",
     role: UserRole.ADMIN,
-    password: "bob",
+    password: "adminpass",
   },
   {
     email: "approver@example.com",
     name: "Approver User",
     role: UserRole.APPROVER,
-    password: "approver123",
+    password: "approverpass",
   },
   {
     email: "submitter@example.com",
     name: "Submitter User",
     role: UserRole.SUBMITTER,
-    password: "submitter123",
+    password: "submitterpass",
   },
   {
     email: "pending@example.com",
     name: "Pending User",
     role: UserRole.PENDING,
-    password: "pending123",
+    password: "pendingpass",
   },
 ];
 
@@ -181,10 +182,22 @@ async function main() {
   );
   const documentTypeIds = documentTypes.map((d) => d.id);
 
+  // Always create Bob first
+  console.log("Creating Bob (admin user)...");
+  const bobData = defaultUsers[0];
+  const hashedBobPassword = await hashPassword(bobData.password);
+  const bob = await prisma.user.create({
+    data: {
+      ...bobData,
+      password: hashedBobPassword,
+      departmentId: departments[0].id, // Assign Bob to IT department
+    },
+  });
+
   if (args["use-faker"]) {
     console.log(`Generating ${args.count} fake records...`);
 
-    // Create users
+    // Create additional users
     const users = await Promise.all(
       Array.from({ length: args.count }, async () => {
         const userData = await createFakeUser(departmentIds);
@@ -228,9 +241,9 @@ async function main() {
   } else {
     console.log("Using default seed data...");
 
-    // Create default users with hashed passwords
+    // Create remaining default users with hashed passwords
     const users = await Promise.all(
-      defaultUsers.map(async (userData) => {
+      defaultUsers.slice(1).map(async (userData) => {
         const hashedPassword = await hashPassword(userData.password);
         return await prisma.user.create({
           data: {
@@ -256,8 +269,8 @@ async function main() {
           status: DocumentStatus.PENDING,
           content: Buffer.from("Sample document content 1"),
           mimeType: "application/pdf",
-          submitterId: users[2].id, // Assign to submitter user
-          approverId: users[1].id, // Assign to approver user
+          submitterId: users[1].id, // Assign to submitter user
+          approverId: users[0].id, // Assign to approver user
         },
       }),
       prisma.document.create({
@@ -270,8 +283,8 @@ async function main() {
           content: Buffer.from("Sample document content 2"),
           mimeType:
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          submitterId: users[2].id, // Assign to submitter user
-          approverId: users[1].id, // Assign to approver user
+          submitterId: users[1].id, // Assign to submitter user
+          approverId: users[0].id, // Assign to approver user
         },
       }),
     ]);

@@ -9,6 +9,7 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import { APP_NAME } from "@/lib/config";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -25,7 +26,7 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       <div className="flex flex-col space-y-3 py-6">
         <h1 className="p-3 text-3xl font-bold tracking-tight">
-          Welcome to DocuTrack
+          Welcome to {APP_NAME}
         </h1>
         <p className="p-3 text-muted-foreground text-lg">
           You are logged in as a {session.user.role.toLowerCase()} user
