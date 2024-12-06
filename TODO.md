@@ -132,7 +132,13 @@
 
 ---
 
-## **Milestone 6: Access Control Enforcement**
+## **Milestone 6: Templates**
+
+- [x] **Add template Manager**
+- [x] admin panel to upload templates for download
+- [x] templates page for all authenticated and authorized users to download templates
+
+## **Milestone 7: Access Control Enforcement**
 
 - [ ] **Implement access control**
   - [ ] Ensure submitters only see their submissions
@@ -147,7 +153,7 @@
 
 ---
 
-## **Milestone 7: Admin Panel Development**
+## **Milestone 8: Admin Panel Development**
 
 - [x] **Develop admin panel**
   - [x] User management (CRUD operations)
@@ -165,7 +171,7 @@
 
 ---
 
-## **Milestone 8: UI/UX Enhancements**
+## **Milestone 9: UI/UX Enhancements**
 
 - [ ] **Apply corporate styling**
   - [ ] Light and dark modes
@@ -181,7 +187,7 @@
 
 ---
 
-## **Milestone 9: Final Testing and Deployment**
+## **Milestone 10: Final Testing and Deployment**
 
 - [ ] **Comprehensive testing**
   - [ ] Unit tests

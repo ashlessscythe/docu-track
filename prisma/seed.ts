@@ -72,6 +72,41 @@ const defaultDocumentTypes = [
   { name: "XLS", description: "Microsoft Excel Spreadsheet" },
 ];
 
+// Default templates
+const defaultTemplates = [
+  {
+    name: "Leave Request Form.docx",
+    description: "Standard template for requesting leave",
+    content: Buffer.from("Leave Request Form Template Content"),
+    mimeType:
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    departmentId: null, // Global template
+  },
+  {
+    name: "Expense Report.xlsx",
+    description: "Template for submitting expense reports",
+    content: Buffer.from("Expense Report Template Content"),
+    mimeType:
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    departmentId: null, // Global template
+  },
+  {
+    name: "IT Request Form.pdf",
+    description: "Form for requesting IT equipment or support",
+    content: Buffer.from("IT Request Form Template Content"),
+    mimeType: "application/pdf",
+    departmentId: null, // Will be set to IT department
+  },
+  {
+    name: "HR Onboarding Checklist.docx",
+    description: "Checklist for new employee onboarding",
+    content: Buffer.from("HR Onboarding Checklist Template Content"),
+    mimeType:
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    departmentId: null, // Will be set to HR department
+  },
+];
+
 // Generate fake user data
 const createFakeUser = async (departmentIds: string[]) => {
   const role = getRandomRole();
@@ -121,6 +156,36 @@ const createFakeDocument = (
   };
 };
 
+// Generate fake template data
+const createFakeTemplate = (
+  departmentIds: string[],
+  documentTypeIds: string[]
+) => {
+  const fileTypes = [
+    { ext: "pdf", mime: "application/pdf" },
+    {
+      ext: "docx",
+      mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    },
+    {
+      ext: "xlsx",
+      mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    },
+  ];
+
+  const fileType = faker.helpers.arrayElement(fileTypes);
+
+  return {
+    name: `${faker.word.words(3)} Template.${fileType.ext}`,
+    description: faker.lorem.sentence(),
+    content: Buffer.from(faker.lorem.paragraphs()),
+    mimeType: fileType.mime,
+    departmentId:
+      Math.random() > 0.5 ? faker.helpers.arrayElement(departmentIds) : null,
+    typeId: faker.helpers.arrayElement(documentTypeIds),
+  };
+};
+
 // Default seed data when not using faker
 const defaultUsers = [
   {
@@ -161,6 +226,7 @@ async function main() {
   if (args.clear) {
     console.log("Clearing existing data...");
     await prisma.document.deleteMany();
+    await prisma.template.deleteMany();
     await prisma.user.deleteMany();
     await prisma.department.deleteMany();
     await prisma.documentType.deleteMany();
@@ -181,6 +247,20 @@ async function main() {
     )
   );
   const documentTypeIds = documentTypes.map((d) => d.id);
+
+  // Create default templates
+  console.log("Creating default templates...");
+  await Promise.all(
+    defaultTemplates.map((template, index) =>
+      prisma.template.create({
+        data: {
+          ...template,
+          departmentId: index >= 2 ? departments[index - 2].id : null, // Assign department-specific templates
+          typeId: documentTypes[index % documentTypes.length].id,
+        },
+      })
+    )
+  );
 
   // Always create Bob first
   console.log("Creating Bob (admin user)...");
@@ -237,6 +317,15 @@ async function main() {
             }
           )
         )
+    );
+
+    // Create additional fake templates
+    console.log("Creating fake templates...");
+    await Promise.all(
+      Array.from({ length: Math.floor(args.count / 2) }, async () => {
+        const templateData = createFakeTemplate(departmentIds, documentTypeIds);
+        return await prisma.template.create({ data: templateData });
+      })
     );
   } else {
     console.log("Using default seed data...");

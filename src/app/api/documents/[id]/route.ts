@@ -51,7 +51,7 @@ export async function PUT(
     }
 
     const formData = await req.formData();
-    const file = formData.get("file") as Blob | null;
+    const file = formData.get("file") as File | null;
 
     // Verify the document belongs to the user
     const document = await prisma.document.findUnique({
@@ -69,6 +69,9 @@ export async function PUT(
       return new NextResponse("No file provided", { status: 400 });
     }
 
+    // Use the original filename from the uploaded file
+    const originalFilename = file.name;
+
     // Convert file to Buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
@@ -77,6 +80,7 @@ export async function PUT(
         id: params.id,
       },
       data: {
+        name: originalFilename, // Update the name to the new file's name
         content: buffer,
         mimeType: file.type,
         status: "PENDING", // Reset status when document is updated

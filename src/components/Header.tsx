@@ -29,6 +29,14 @@ export function Header() {
                   Dashboard
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/templates"
+                  className="text-foreground hover:text-foreground/80"
+                >
+                  Templates
+                </Link>
+              </li>
               {session.user.role === "ADMIN" && (
                 <li>
                   <Link

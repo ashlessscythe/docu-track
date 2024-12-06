@@ -47,3 +47,17 @@ export type Document = {
   approverId?: string;
   approver?: User;
 };
+
+export type Template = {
+  id: string;
+  name: string;
+  description: string;
+  content: Buffer;
+  mimeType: string;
+  departmentId: string | null;
+  typeId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  department?: Department | null;
+  type: DocumentType;
+};

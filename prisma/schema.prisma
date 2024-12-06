@@ -44,6 +44,7 @@ model Department {
   description String?
   users       User[]       @relation
   documents   Document[]   @relation
+  templates   Template[]   // Optional relation to templates
 }
 
 model DocumentType {
@@ -51,6 +52,7 @@ model DocumentType {
   name        String       @unique
   description String?
   documents   Document[]   @relation
+  templates   Template[]   // Optional relation to templates
 }
 
 model Document {
@@ -70,4 +72,18 @@ model Document {
   submitterId   String
   approver      User?           @relation("DocumentApprovals", fields: [approverId], references: [id])
   approverId    String?
+}
+
+model Template {
+  id            String         @id @default(cuid())
+  name          String
+  description   String
+  content       Bytes          // Template file content stored as bytes
+  mimeType      String         // MIME type of the file
+  departmentId  String?        // Optional foreign key to Department table
+  department    Department?    @relation(fields: [departmentId], references: [id])
+  typeId        String         // Foreign key to DocumentType table
+  type          DocumentType  @relation(fields: [typeId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }

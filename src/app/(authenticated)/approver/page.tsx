@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import {
@@ -93,23 +93,12 @@ export default function ApproverPage() {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [departmentName, setDepartmentName] = useState<string>("");
 
-  useEffect(() => {
-    if (status === "authenticated") {
-      if (session.user.role !== "APPROVER" && session.user.role !== "ADMIN") {
-        redirect("/unauthorized");
-        return;
-      }
-      fetchDocuments();
-      if (session.user.departmentId) {
-        fetchDepartmentName();
-      }
-    }
-  }, [status, session?.user.role, session?.user.departmentId]);
+  const fetchDepartmentName = useCallback(async () => {
+    if (!session?.user.departmentId) return;
 
-  const fetchDepartmentName = async () => {
     try {
       const response = await fetch(
-        `/api/departments/${session?.user.departmentId}`
+        `/api/departments/${session.user.departmentId}`
       );
       if (!response.ok) throw new Error("Failed to fetch department");
       const data = await response.json();
@@ -117,7 +106,7 @@ export default function ApproverPage() {
     } catch (error) {
       console.error("Error fetching department:", error);
     }
-  };
+  }, [session?.user.departmentId]);
 
   const fetchDocuments = async () => {
     try {
@@ -134,6 +123,17 @@ export default function ApproverPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      if (session.user.role !== "APPROVER" && session.user.role !== "ADMIN") {
+        redirect("/unauthorized");
+        return;
+      }
+      fetchDocuments();
+      fetchDepartmentName();
+    }
+  }, [status, session?.user.role, fetchDepartmentName]);
 
   const updateDocumentStatus = async (
     documentId: string,

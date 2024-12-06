@@ -36,7 +36,6 @@ interface DocumentType {
 }
 
 const formSchema = z.object({
-  name: z.string().min(1, "Document name is required"),
   typeId: z.string().min(1, "Document type is required"),
   description: z.string().min(1, "Description is required"),
   departmentId: z.string().optional(),
@@ -59,7 +58,6 @@ export function DocumentSubmissionForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
       typeId: "",
       description: "",
       departmentId: undefined,
@@ -103,7 +101,6 @@ export function DocumentSubmissionForm({
       setIsSubmitting(true);
 
       const formData = new FormData();
-      formData.append("name", values.name);
       formData.append("typeId", values.typeId);
       formData.append("description", values.description);
       if (values.departmentId && session?.user.role !== "PENDING") {
@@ -147,20 +144,6 @@ export function DocumentSubmissionForm({
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4 font-sans"
       >
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="font-medium">Document Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter document name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <FormField
           control={form.control}
           name="typeId"
@@ -246,6 +229,11 @@ export function DocumentSubmissionForm({
           </FormControl>
           {!file && form.formState.isSubmitted && (
             <FormMessage>Please select a file</FormMessage>
+          )}
+          {file && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Selected file: {file.name}
+            </p>
           )}
         </FormItem>
 

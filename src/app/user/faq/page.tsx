@@ -1,83 +1,116 @@
-import { LandingHeader } from "@/components/LandingHeader";
-import { APP_NAME } from "@/lib/config";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { Metadata } from "next";
 
-export default async function FAQPage() {
-  const session = await getServerSession(authOptions);
+export const metadata: Metadata = {
+  title: "FAQ",
+  description: "Frequently Asked Questions",
+};
 
+export default function FAQPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <LandingHeader session={session} appName={APP_NAME} />
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-4xl font-bold mb-8">Frequently Asked Questions</h1>
 
-      <main>
-        <div className="bg-background">
-          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold tracking-tight text-foreground">
-                Frequently Asked Questions
-              </h1>
-              <p className="mt-4 text-lg text-muted-foreground">
-                Find answers to common questions about using {APP_NAME}
+      <div className="space-y-8">
+        <section>
+          <h2 className="text-2xl font-semibold mb-4">General Questions</h2>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-xl font-medium mb-2">
+                What is the purpose of this system?
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                This system is designed to streamline document submission and
+                approval processes within organizations.
               </p>
             </div>
 
-            <div className="max-w-3xl mx-auto space-y-8">
-              <div className="bg-card p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-card-foreground">
-                  How do I submit a document?
-                </h3>
-                <p className="mt-2 text-muted-foreground">
-                  To submit a document, log into your account and click the
-                  "Submit Document" button on your dashboard. Fill out the
-                  required information and upload your document file.
-                </p>
-              </div>
-
-              <div className="bg-card p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-card-foreground">
-                  How long does the approval process take?
-                </h3>
-                <p className="mt-2 text-muted-foreground">
-                  The approval timeline varies depending on the document type
-                  and department. You can track the status of your document in
-                  real-time through your dashboard.
-                </p>
-              </div>
-
-              <div className="bg-card p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-card-foreground">
-                  What file formats are supported?
-                </h3>
-                <p className="mt-2 text-muted-foreground">
-                  We support most common document formats including PDF, DOC,
-                  DOCX, and image files (JPG, PNG). Please ensure your files are
-                  under 10MB in size.
-                </p>
-              </div>
-
-              <div className="bg-card p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-card-foreground">
-                  Can I revise a submitted document?
-                </h3>
-                <p className="mt-2 text-muted-foreground">
-                  Yes, you can submit a revised version if your document is
-                  returned for changes. The system will maintain a version
-                  history of all submissions.
-                </p>
-              </div>
+            <div>
+              <h3 className="text-xl font-medium mb-2">
+                How do I get started?
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Register for an account, and once approved, you can begin
+                submitting or reviewing documents based on your role.
+              </p>
             </div>
           </div>
-        </div>
-      </main>
+        </section>
 
-      <footer className="bg-background border-t border-border">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <p className="text-center text-sm text-muted-foreground">
-            © 2024 {APP_NAME}. All rights reserved.
-          </p>
-        </div>
-      </footer>
+        <section>
+          <h2 className="text-2xl font-semibold mb-4">Document Submission</h2>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-xl font-medium mb-2">
+                What file types are supported?
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                We support PDF, DOCX, TXT, and other common document formats.
+                Check the document types section for a complete list.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-xl font-medium mb-2">
+                How long does the approval process take?
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                The approval timeline varies by department and document type.
+                Typically, you can expect a response within 2-3 business days.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-semibold mb-4">Account Management</h2>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-xl font-medium mb-2">
+                How do I update my profile?
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                You can update your profile information from the account
+                settings page after logging in.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-xl font-medium mb-2">
+                What if I forget my password?
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Use the &quot;Forgot Password&quot; link on the login page to
+                reset your password through your registered email.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-semibold mb-4">Technical Support</h2>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-xl font-medium mb-2">
+                What browsers are supported?
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                We support the latest versions of Chrome, Firefox, Safari, and
+                Edge.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-xl font-medium mb-2">
+                How do I report an issue?
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Visit our support page to submit a ticket or contact our support
+                team directly.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

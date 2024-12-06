@@ -56,22 +56,24 @@ export async function POST(req: Request) {
     }
 
     const formData = await req.formData();
-    const name = formData.get("name") as string;
     const typeId = formData.get("typeId") as string;
     const description = formData.get("description") as string;
     const departmentId = formData.get("departmentId") as string | null;
-    const file = formData.get("file") as Blob;
+    const file = formData.get("file") as File;
 
-    if (!name || !typeId || !description || !file) {
+    if (!typeId || !description || !file) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
+
+    // Use the original filename from the uploaded file
+    const originalFilename = file.name;
 
     // Convert file to Buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
     const document = await prisma.document.create({
       data: {
-        name,
+        name: originalFilename, // Use original filename
         typeId,
         description,
         departmentId: session.user.role === "PENDING" ? null : departmentId,
