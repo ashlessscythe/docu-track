@@ -18,15 +18,35 @@ export async function GET() {
           email: session.user.email,
         },
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        mimeType: true,
         submitter: {
           select: {
             name: true,
             email: true,
           },
         },
-        type: true,
-        department: true,
+        type: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        department: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        departmentId: true,
+        typeId: true,
+        submitterId: true,
       },
       orderBy: {
         createdAt: "desc",

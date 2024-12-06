@@ -6,6 +6,9 @@ import { DocumentStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
+// Maximum file size: 1.5MB in bytes
+const MAX_FILE_SIZE = 1.5 * 1024 * 1024;
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -25,7 +28,14 @@ export async function GET() {
           : {
               submitterId: session.user.id,
             },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        mimeType: true,
         submitter: {
           select: {
             name: true,
@@ -34,6 +44,9 @@ export async function GET() {
         },
         department: true,
         type: true,
+        departmentId: true,
+        typeId: true,
+        submitterId: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -65,6 +78,11 @@ export async function POST(req: Request) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
 
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      return new NextResponse("File size exceeds 1.5MB limit", { status: 400 });
+    }
+
     // Use the original filename from the uploaded file
     const originalFilename = file.name;
 
@@ -73,7 +91,7 @@ export async function POST(req: Request) {
 
     const document = await prisma.document.create({
       data: {
-        name: originalFilename, // Use original filename
+        name: originalFilename,
         typeId,
         description,
         departmentId: session.user.role === "PENDING" ? null : departmentId,
@@ -82,7 +100,13 @@ export async function POST(req: Request) {
         mimeType: file.type,
         submitterId: session.user.id,
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        status: true,
+        createdAt: true,
+        mimeType: true,
         department: true,
         type: true,
       },

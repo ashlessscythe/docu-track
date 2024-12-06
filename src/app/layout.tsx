@@ -18,6 +18,11 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: APP_NAME,
   description: `${APP_NAME} - Document tracking and approval system`,
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/file.svg",
+  },
 };
 
 export default function RootLayout({

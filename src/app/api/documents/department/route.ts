@@ -22,15 +22,35 @@ export async function GET() {
           : {
               departmentId: session.user.departmentId, // Filter by department for regular approvers
             },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        mimeType: true,
         submitter: {
           select: {
             name: true,
             email: true,
           },
         },
-        department: true,
-        type: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        type: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        departmentId: true,
+        typeId: true,
+        submitterId: true,
       },
       orderBy: {
         createdAt: "desc",
