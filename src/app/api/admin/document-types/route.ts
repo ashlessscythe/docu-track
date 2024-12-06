@@ -23,7 +23,30 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(documentTypes);
+    // Parse the JSON description and format the response
+    const formattedTypes = documentTypes.map((type) => {
+      try {
+        const descriptionData = JSON.parse(
+          type.description || '{"text": "", "type": "default"}'
+        );
+        return {
+          id: type.id,
+          name: type.name,
+          description: descriptionData.text,
+          type: descriptionData.type,
+        };
+      } catch (e) {
+        // If parsing fails, return the description as is (for backward compatibility)
+        return {
+          id: type.id,
+          name: type.name,
+          description: type.description || "",
+          type: "default",
+        };
+      }
+    });
+
+    return NextResponse.json(formattedTypes);
   } catch (error) {
     console.error("Failed to fetch document types:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

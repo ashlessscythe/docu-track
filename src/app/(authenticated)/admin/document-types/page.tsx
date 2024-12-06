@@ -166,10 +166,10 @@ export default function DocumentTypesManagement() {
                     setNewType({ ...newType, type: value })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="text-foreground bg-background border border-border shadow-sm rounded-dm">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="text-foreground bg-background border border-border shadow-sm rounded-dm">
                     <SelectItem value="default">Default</SelectItem>
                     <SelectItem value="internal">Internal</SelectItem>
                     <SelectItem value="external">External</SelectItem>
@@ -263,10 +263,10 @@ export default function DocumentTypesManagement() {
                   )
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="text-foreground bg-background border border-border shadow-sm rounded-dm">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="text-foreground bg-background border border-border shadow-sm rounded-dm">
                   <SelectItem value="default">Default</SelectItem>
                   <SelectItem value="internal">Internal</SelectItem>
                   <SelectItem value="external">External</SelectItem>
