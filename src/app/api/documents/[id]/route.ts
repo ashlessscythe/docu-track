@@ -11,19 +11,28 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return new NextResponse("Unauthorized - Please sign in", { status: 401 });
     }
 
-    // Verify the document belongs to the user
+    // First try to find the document
     const document = await prisma.document.findUnique({
       where: {
         id: params.id,
-        submitterId: session.user.id,
       },
     });
 
     if (!document) {
       return new NextResponse("Document not found", { status: 404 });
+    }
+
+    // Allow deletion if user is admin or if the document belongs to the user
+    if (session.user.role !== "ADMIN") {
+      if (document.submitterId !== session.user.id) {
+        return new NextResponse(
+          "Access denied - Only document owners and administrators can delete documents",
+          { status: 401 }
+        );
+      }
     }
 
     await prisma.document.delete({
