@@ -62,16 +62,26 @@ export async function PUT(
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
 
-    // Verify the document belongs to the user
+    // First find the document
     const document = await prisma.document.findUnique({
       where: {
         id: params.id,
-        submitterId: session.user.id,
       },
     });
 
     if (!document) {
       return new NextResponse("Document not found", { status: 404 });
+    }
+
+    // Check permissions - allow only admin or document owner
+    const isAdmin = session.user.role === "ADMIN";
+    const isOwner = document.submitterId === session.user.id;
+
+    if (!isAdmin && !isOwner) {
+      return new NextResponse(
+        "Access denied - Only document owners and administrators can update documents",
+        { status: 401 }
+      );
     }
 
     if (!file) {

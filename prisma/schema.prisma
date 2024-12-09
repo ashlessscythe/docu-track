@@ -36,6 +36,7 @@ model User {
   updatedAt     DateTime     @updatedAt
   documents     Document[]   @relation("SubmittedDocuments")
   approvals     Document[]   @relation("DocumentApprovals")
+  comments      Comment[]    // Relation to comments made by the user
 }
 
 model Department {
@@ -72,6 +73,7 @@ model Document {
   submitterId   String
   approver      User?           @relation("DocumentApprovals", fields: [approverId], references: [id])
   approverId    String?
+  comments      Comment[]       // Relation to document comments
 }
 
 model Template {
@@ -86,4 +88,15 @@ model Template {
   type          DocumentType  @relation(fields: [typeId], references: [id])
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+}
+
+model Comment {
+  id          String    @id @default(cuid())
+  content     String    // The comment text
+  documentId  String    // Foreign key to the Document table
+  document    Document  @relation(fields: [documentId], references: [id])
+  userId      String    // Foreign key to the User table
+  user        User      @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

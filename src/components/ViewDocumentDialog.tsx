@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DocumentCommentsDialog } from "./DocumentCommentsDialog";
 
 interface Department {
   id: string;
@@ -41,7 +42,10 @@ interface ViewDocumentDialogProps {
     department: Department | null;
     status: string;
     createdAt: string;
+    submitterId?: string; // Made optional
   };
+  userRole?: string; // Made optional
+  userId?: string; // Made optional
   onDocumentUpdate: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -49,15 +53,36 @@ interface ViewDocumentDialogProps {
 
 export function ViewDocumentDialog({
   document,
+  userRole,
+  userId,
   onDocumentUpdate,
   open,
   onOpenChange,
 }: ViewDocumentDialogProps) {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showCommentsDialog, setShowCommentsDialog] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [commentCount, setCommentCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      fetchCommentCount();
+    }
+  }, [open, document.id]);
+
+  const fetchCommentCount = async () => {
+    try {
+      const response = await fetch(`/api/documents/${document.id}/comments`);
+      if (!response.ok) throw new Error("Failed to fetch comments");
+      const comments = await response.json();
+      setCommentCount(comments.length);
+    } catch (error) {
+      console.error("Error fetching comment count:", error);
+    }
+  };
 
   const handleDownload = async () => {
     try {
@@ -90,6 +115,9 @@ export function ViewDocumentDialog({
 
       if (!response.ok) throw new Error("Delete failed");
 
+      // Add a system comment for deletion
+      await addSystemComment("Document was deleted");
+
       onOpenChange(false);
       onDocumentUpdate();
     } catch (error) {
@@ -116,12 +144,62 @@ export function ViewDocumentDialog({
 
       if (!response.ok) throw new Error("Update failed");
 
-      onOpenChange(false);
+      // Add a system comment for file replacement
+      await addSystemComment(`File was replaced with: ${file.name}`);
+
+      // Update document without closing dialogs
       onDocumentUpdate();
+      fetchCommentCount(); // Refresh comment count
     } catch (error) {
       console.error("Error updating document:", error);
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
+    try {
+      const response = await fetch(`/api/documents/${document.id}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) throw new Error("Status update failed");
+
+      // Add a system comment for status change
+      await addSystemComment(`Document status changed to: ${newStatus}`);
+
+      // If status is changed to NEEDS_REVIEW, open comments dialog
+      if (newStatus === "NEEDS_REVIEW") {
+        setShowCommentsDialog(true);
+      }
+
+      // Update document without closing dialogs
+      onDocumentUpdate();
+      fetchCommentCount(); // Refresh comment count
+    } catch (error) {
+      console.error("Error updating status:", error);
+    }
+  };
+
+  const addSystemComment = async (content: string) => {
+    try {
+      await fetch(`/api/documents/${document.id}/comments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content,
+          isSystem: true,
+        }),
+      });
+      fetchCommentCount(); // Refresh comment count after adding system comment
+    } catch (error) {
+      console.error("Error adding system comment:", error);
     }
   };
 
@@ -207,6 +285,18 @@ export function ViewDocumentDialog({
                 >
                   {updating ? "Updating..." : "Replace File"}
                 </Button>
+                <Button
+                  onClick={() => setShowCommentsDialog(true)}
+                  variant="outline"
+                  className="relative"
+                >
+                  Comments & History
+                  {commentCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {commentCount}
+                    </span>
+                  )}
+                </Button>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -247,6 +337,17 @@ export function ViewDocumentDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <DocumentCommentsDialog
+        documentId={document.id}
+        open={showCommentsDialog}
+        onOpenChange={setShowCommentsDialog}
+        onCommentAdded={() => {
+          // Just refresh the document data and comment count without closing any dialogs
+          onDocumentUpdate();
+          fetchCommentCount();
+        }}
+      />
     </>
   );
 }
