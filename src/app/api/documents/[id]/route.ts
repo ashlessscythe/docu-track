@@ -35,10 +35,21 @@ export async function DELETE(
       }
     }
 
-    await prisma.document.delete({
-      where: {
-        id: params.id,
-      },
+    // Use a transaction to delete comments first, then the document
+    await prisma.$transaction(async (tx) => {
+      // Delete all comments associated with the document
+      await tx.comment.deleteMany({
+        where: {
+          documentId: params.id,
+        },
+      });
+
+      // Delete the document
+      await tx.document.delete({
+        where: {
+          id: params.id,
+        },
+      });
     });
 
     return new NextResponse(null, { status: 204 });
