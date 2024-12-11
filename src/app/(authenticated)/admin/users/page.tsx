@@ -161,12 +161,8 @@ export default function UsersManagement() {
     return department.name;
   };
 
-  const roleOptions = [
-    UserRole.ADMIN,
-    UserRole.APPROVER,
-    UserRole.SUBMITTER,
-    UserRole.PENDING,
-  ];
+  // Get all roles from the UserRole enum
+  const roleOptions = Object.values(UserRole);
 
   const openEditModal = (user: User) => {
     setSelectedUserId(user.id);

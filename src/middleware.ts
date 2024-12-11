@@ -31,13 +31,22 @@ export default withAuth(
         return NextResponse.next();
       }
 
+      // Allow REPORTER role access to reports
+      if (token.role === "REPORTER" && path.startsWith("/reports")) {
+        return NextResponse.next();
+      }
+
       // Allow users to access their own role-specific pages
       if (path.startsWith(`/${token.role.toLowerCase()}`)) {
         return NextResponse.next();
       }
 
       // Protect role-specific pages from other roles
-      if (path.startsWith("/approver") || path.startsWith("/submitter")) {
+      if (
+        path.startsWith("/approver") ||
+        path.startsWith("/submitter") ||
+        path.startsWith("/reports")
+      ) {
         return NextResponse.redirect(new URL("/unauthorized", req.url));
       }
     }
@@ -71,6 +80,7 @@ export const config = {
     "/approver/:path*",
     "/submitter/:path*",
     "/pending/:path*",
+    "/reports/:path*",
     "/unauthorized",
     "/api/:path*",
   ],

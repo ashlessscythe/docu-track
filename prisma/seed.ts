@@ -46,8 +46,20 @@ const getRandomRole = (): UserRole => {
     UserRole.APPROVER,
     UserRole.ADMIN,
     UserRole.PENDING,
+    UserRole.REPORTER,
   ];
   return roles[Math.floor(Math.random() * roles.length)];
+};
+
+// Generate a random document status
+const getRandomStatus = (): DocumentStatus => {
+  const statuses = [
+    DocumentStatus.PENDING,
+    DocumentStatus.APPROVED,
+    DocumentStatus.REJECTED,
+    DocumentStatus.NEEDS_REVIEW,
+  ];
+  return faker.helpers.arrayElement(statuses);
 };
 
 // Hash password using bcrypt
@@ -143,13 +155,14 @@ const createFakeDocument = (
   ];
 
   const fileType = faker.helpers.arrayElement(fileTypes);
+  const status = getRandomStatus();
 
   return {
     name: `${faker.system.fileName()}.${fileType.ext}`,
     typeId: faker.helpers.arrayElement(documentTypeIds),
     description: faker.lorem.paragraph(),
     departmentId: faker.helpers.arrayElement(departmentIds),
-    status: DocumentStatus.PENDING,
+    status,
     content,
     mimeType: fileType.mime,
     submitterId: userId,
@@ -212,6 +225,12 @@ const defaultUsers = [
     role: UserRole.PENDING,
     password: "pendingpass",
   },
+  {
+    email: "reporter@example.com",
+    name: "Reporter User",
+    role: UserRole.REPORTER,
+    password: "reporterpass",
+  },
 ];
 
 async function main() {
@@ -225,6 +244,7 @@ async function main() {
 
   if (args.clear) {
     console.log("Clearing existing data...");
+    await prisma.comment.deleteMany();
     await prisma.document.deleteMany();
     await prisma.template.deleteMany();
     await prisma.user.deleteMany();
@@ -347,7 +367,7 @@ async function main() {
       })
     );
 
-    // Create some default documents
+    // Create some default documents with random statuses
     await Promise.all([
       prisma.document.create({
         data: {
@@ -355,7 +375,7 @@ async function main() {
           typeId: documentTypes[0].id, // PDF type
           description: "A sample document for testing",
           departmentId: departments[0].id, // IT department
-          status: DocumentStatus.PENDING,
+          status: getRandomStatus(),
           content: Buffer.from("Sample document content 1"),
           mimeType: "application/pdf",
           submitterId: users[1].id, // Assign to submitter user
@@ -368,7 +388,7 @@ async function main() {
           typeId: documentTypes[1].id, // DOCX type
           description: "Another sample document",
           departmentId: departments[1].id, // HR department
-          status: DocumentStatus.APPROVED,
+          status: getRandomStatus(),
           content: Buffer.from("Sample document content 2"),
           mimeType:
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

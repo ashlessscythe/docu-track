@@ -3,6 +3,7 @@ export enum UserRole {
   APPROVER = "APPROVER",
   ADMIN = "ADMIN",
   PENDING = "PENDING",
+  REPORTER = "REPORTER",
 }
 
 export type Department = {

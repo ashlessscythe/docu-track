@@ -69,6 +69,17 @@ export function Header() {
                   </Link>
                 </li>
               )}
+              {(session.user.role === "REPORTER" ||
+                session.user.role === "ADMIN") && (
+                <li>
+                  <Link
+                    href="/reports"
+                    className="text-foreground hover:text-foreground/80"
+                  >
+                    Reports
+                  </Link>
+                </li>
+              )}
             </>
           )}
           {!session && (
