@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,13 +39,7 @@ export function DocumentCommentsDialog({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      fetchComments();
-    }
-  }, [open, documentId]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/documents/${documentId}/comments`);
@@ -57,7 +51,13 @@ export function DocumentCommentsDialog({
     } finally {
       setLoading(false);
     }
-  };
+  }, [documentId]);
+
+  useEffect(() => {
+    if (open) {
+      fetchComments();
+    }
+  }, [open, fetchComments]);
 
   const handleSubmitComment = async () => {
     if (!newComment.trim()) return;

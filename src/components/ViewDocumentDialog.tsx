@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,10 +42,10 @@ interface ViewDocumentDialogProps {
     department: Department | null;
     status: string;
     createdAt: string;
-    submitterId?: string; // Made optional
+    submitterId?: string;
   };
-  userRole?: string; // Made optional
-  userId?: string; // Made optional
+  userRole?: string;
+  userId?: string;
   onDocumentUpdate: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -67,13 +67,7 @@ export function ViewDocumentDialog({
   const [commentCount, setCommentCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (open) {
-      fetchCommentCount();
-    }
-  }, [open, document.id]);
-
-  const fetchCommentCount = async () => {
+  const fetchCommentCount = useCallback(async () => {
     try {
       const response = await fetch(`/api/documents/${document.id}/comments`);
       if (!response.ok) throw new Error("Failed to fetch comments");
@@ -82,7 +76,13 @@ export function ViewDocumentDialog({
     } catch (error) {
       console.error("Error fetching comment count:", error);
     }
-  };
+  }, [document.id]);
+
+  useEffect(() => {
+    if (open) {
+      fetchCommentCount();
+    }
+  }, [open, fetchCommentCount]);
 
   const handleDownload = async () => {
     try {

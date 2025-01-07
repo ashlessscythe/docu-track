@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Maximize2, Minimize2 } from "lucide-react";
 
 interface DocumentStats {
-  department: string;
+  department: string | null;
   total: number;
   approved: number;
   pending: number;
@@ -158,7 +158,12 @@ export default function ReportsPage() {
                   }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="department" />
+                  <XAxis
+                    dataKey="department"
+                    tickFormatter={(value) =>
+                      value === null ? "Global" : value
+                    }
+                  />
                   <YAxis />
                   <Tooltip />
                   <Legend />
@@ -270,9 +275,11 @@ export default function ReportsPage() {
       {!deptLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
           {deptData.map((dept) => (
-            <Card key={dept.department}>
+            <Card key={dept.department ?? "global"}>
               <CardHeader>
-                <CardTitle className="text-lg">{dept.department}</CardTitle>
+                <CardTitle className="text-lg">
+                  {dept.department ?? "Global (No dept)"}
+                </CardTitle>
                 <CardDescription>Document Statistics</CardDescription>
               </CardHeader>
               <CardContent>

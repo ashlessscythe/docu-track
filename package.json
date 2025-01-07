@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "npx prisma generate && npx prisma migrate deploy && next start",
+    "build": "npx prisma generate && next build",
+    "start": "npx prisma migrate deploy && next start",
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -30,6 +30,7 @@
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "lucide-react": "^0.459.0",
     "next": "14.0.4",
     "next-auth": "^4.24.10",

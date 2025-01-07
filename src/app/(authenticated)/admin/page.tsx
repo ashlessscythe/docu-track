@@ -9,6 +9,16 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Document Management</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            View and manage all submitted documents and their status
+          </p>
+          <Link href="/admin/documents">
+            <Button className="w-full">Manage Documents</Button>
+          </Link>
+        </Card>
+
+        <Card className="p-6">
           <h2 className="text-xl font-semibold mb-4">User Management</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Manage user accounts, roles, and permissions

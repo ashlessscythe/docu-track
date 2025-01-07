@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    // Get documents grouped by department with status counts
-    const stats = await prisma.department.findMany({
+    // Get all departments with their documents
+    const deptStats = await prisma.department.findMany({
       select: {
         name: true,
         documents: {
@@ -15,8 +15,18 @@ export async function GET() {
       },
     });
 
-    // Transform the data for the chart
-    const chartData = stats.map((dept) => {
+    // Get documents with no department
+    const globalDocs = await prisma.document.findMany({
+      where: {
+        departmentId: null,
+      },
+      select: {
+        status: true,
+      },
+    });
+
+    // Transform department data
+    const deptData = deptStats.map((dept) => {
       const totalDocs = dept.documents.length;
       const approved = dept.documents.filter(
         (doc) => doc.status === "APPROVED"
@@ -40,6 +50,20 @@ export async function GET() {
         needsReview,
       };
     });
+
+    // Add global documents data
+    const globalStats = {
+      department: null,
+      total: globalDocs.length,
+      approved: globalDocs.filter((doc) => doc.status === "APPROVED").length,
+      pending: globalDocs.filter((doc) => doc.status === "PENDING").length,
+      rejected: globalDocs.filter((doc) => doc.status === "REJECTED").length,
+      needsReview: globalDocs.filter((doc) => doc.status === "NEEDS_REVIEW")
+        .length,
+    };
+
+    // Combine department and global data
+    const chartData = [...deptData, globalStats];
 
     return NextResponse.json(chartData);
   } catch (error) {
