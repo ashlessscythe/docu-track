@@ -52,8 +52,8 @@ export async function POST(req: Request) {
       },
     });
 
-    // Get base URL from request
-    const baseUrl = new URL(req.url).origin;
+    // Use NEXTAUTH_URL from environment variables with fallback
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
     // Send password reset email
     const emailResult = await sendPasswordResetEmail(user, resetToken, baseUrl);
