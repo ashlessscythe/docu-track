@@ -1,3 +1,20 @@
+import {
+  Body,
+  Button,
+  Container,
+  Head,
+  Heading,
+  Hr,
+  Html,
+  Img,
+  Link,
+  Preview,
+  Section,
+  Tailwind,
+  Text,
+  Row,
+  Column,
+} from "@react-email/components";
 import * as React from "react";
 
 interface WelcomeEmailProps {
@@ -8,36 +25,79 @@ interface WelcomeEmailProps {
 export const WelcomeEmail: React.FC<Readonly<WelcomeEmailProps>> = ({
   name,
   appName,
-}) => (
-  <div
-    style={{ fontFamily: "Arial, sans-serif", padding: "20px", color: "#333" }}
-  >
-    <h1 style={{ color: "#2563eb" }}>Welcome to {appName}!</h1>
-    <p>Hello {name},</p>
-    <p>
-      Thank you for joining {appName}. We&apos;re excited to have you on board!
-    </p>
-    <p>
-      With {appName}, you can easily manage document submissions, approvals, and
-      more.
-    </p>
-    <div
-      style={{
-        marginTop: "30px",
-        padding: "15px",
-        backgroundColor: "#f3f4f6",
-        borderRadius: "5px",
-      }}
-    >
-      <p style={{ margin: "0", fontSize: "14px" }}>
-        If you have any questions or need assistance, please don&apos;t hesitate
-        to contact our support team.
-      </p>
-    </div>
-    <p style={{ marginTop: "30px", fontSize: "14px", color: "#6b7280" }}>
-      Best regards,
-      <br />
-      The {appName} Team
-    </p>
-  </div>
-);
+}) => {
+  const previewText = `Welcome to ${appName}!`;
+  const currentYear = new Date().getFullYear();
+
+  return (
+    <Html>
+      <Head />
+      <Tailwind>
+        <Body className="bg-gray-50 my-auto mx-auto font-sans">
+          <Preview>{previewText}</Preview>
+          <Container className="border border-solid border-gray-200 rounded-lg my-[40px] mx-auto p-[20px] max-w-[465px] bg-white shadow-sm">
+            <Section className="mt-[32px]">
+              <Img
+                src={`${process.env.NEXT_PUBLIC_APP_URL}/images/logo.png`}
+                width="40"
+                height="40"
+                alt={appName}
+                className="my-0 mx-auto"
+              />
+            </Section>
+            <Heading className="text-gray-800 text-[24px] font-bold text-center p-0 my-[30px] mx-0">
+              Welcome to <span className="text-blue-600">{appName}</span>!
+            </Heading>
+            <Text className="text-gray-700 text-[16px] leading-[24px]">
+              Hello {name},
+            </Text>
+            <Text className="text-gray-700 text-[16px] leading-[24px]">
+              Thank you for joining{" "}
+              <span className="font-semibold">{appName}</span>. We're excited to
+              have you on board!
+            </Text>
+
+            <Section className="bg-blue-50 rounded-md p-[20px] border border-blue-100 my-[24px]">
+              <Text className="text-gray-800 text-[16px] leading-[24px] m-0 font-medium">
+                With {appName}, you can:
+              </Text>
+              <ul className="pl-[20px] mt-[8px] mb-0">
+                <li className="text-gray-700 text-[15px] leading-[24px]">
+                  Easily manage document submissions
+                </li>
+                <li className="text-gray-700 text-[15px] leading-[24px]">
+                  Track approval processes
+                </li>
+                <li className="text-gray-700 text-[15px] leading-[24px]">
+                  Collaborate with your team
+                </li>
+              </ul>
+            </Section>
+
+            <Section className="text-center mt-[32px] mb-[32px]">
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 rounded-md text-white text-[14px] font-semibold no-underline text-center px-6 py-3 transition-colors"
+                href={`${process.env.NEXTAUTH_URL}/dashboard`}
+              >
+                Get Started
+              </Button>
+            </Section>
+
+            <Hr className="border border-solid border-gray-200 my-[26px] mx-0 w-full" />
+
+            <Section className="bg-gray-50 rounded-md p-[16px] border border-gray-100">
+              <Text className="text-gray-700 text-[14px] leading-[24px] m-0">
+                If you have any questions or need assistance, please don't
+                hesitate to contact our support team.
+              </Text>
+            </Section>
+
+            <Text className="text-gray-500 text-[12px] leading-[24px] mt-[32px]">
+              &copy; {currentYear} {appName}. All rights reserved.
+            </Text>
+          </Container>
+        </Body>
+      </Tailwind>
+    </Html>
+  );
+};
