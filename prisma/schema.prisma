@@ -26,18 +26,20 @@ enum DocumentStatus {
 }
 
 model User {
-  id            String       @id @default(cuid())
-  email         String       @unique
-  name          String
-  password      String
-  role          UserRole
-  departmentId  String?      // Foreign key to the Department table
-  department    Department?  @relation(fields: [departmentId], references: [id])
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  documents     Document[]   @relation("SubmittedDocuments")
-  approvals     Document[]   @relation("DocumentApprovals")
-  comments      Comment[]    // Relation to comments made by the user
+  id                String       @id @default(cuid())
+  email             String       @unique
+  name              String
+  password          String
+  role              UserRole
+  departmentId      String?      // Foreign key to the Department table
+  department        Department?  @relation(fields: [departmentId], references: [id])
+  resetToken        String?      // Token for password reset
+  resetTokenExpiry  DateTime?    // Expiry time for reset token
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  documents         Document[]   @relation("SubmittedDocuments")
+  approvals         Document[]   @relation("DocumentApprovals")
+  comments          Comment[]    // Relation to comments made by the user
 }
 
 model Department {

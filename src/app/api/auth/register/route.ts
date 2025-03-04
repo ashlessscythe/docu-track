@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { UserRole } from "@prisma/client";
 import { z } from "zod";
+import { sendWelcomeEmail } from "@/lib/email";
 
 // Validation schema
 const registerSchema = z.object({
@@ -53,19 +54,27 @@ export async function POST(req: Request) {
         role: UserRole.PENDING,
         departmentId: null,
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        departmentId: true,
-      },
     });
 
     console.log("User created successfully:", user);
 
+    // Send welcome email
+    const emailResult = await sendWelcomeEmail(user);
+    if (!emailResult.success) {
+      console.error("Failed to send welcome email:", emailResult.error);
+    }
+
+    // Return user data without sensitive information
+    const userData = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      departmentId: user.departmentId,
+    };
+
     return NextResponse.json({
-      user,
+      user: userData,
       message: "Registration successful",
     });
   } catch (error) {
