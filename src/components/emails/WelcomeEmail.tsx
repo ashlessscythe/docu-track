@@ -53,8 +53,8 @@ export const WelcomeEmail: React.FC<Readonly<WelcomeEmailProps>> = ({
             </Text>
             <Text className="text-gray-700 text-[16px] leading-[24px]">
               Thank you for joining{" "}
-              <span className="font-semibold">{appName}</span>. We're excited to
-              have you on board!
+              <span className="font-semibold">{appName}</span>. We&apos;re
+              excited to have you on board!
             </Text>
 
             <Section className="bg-blue-50 rounded-md p-[20px] border border-blue-100 my-[24px]">
@@ -87,7 +87,7 @@ export const WelcomeEmail: React.FC<Readonly<WelcomeEmailProps>> = ({
 
             <Section className="bg-gray-50 rounded-md p-[16px] border border-gray-100">
               <Text className="text-gray-700 text-[14px] leading-[24px] m-0">
-                If you have any questions or need assistance, please don't
+                If you have any questions or need assistance, please don&apos;t
                 hesitate to contact our support team.
               </Text>
             </Section>
