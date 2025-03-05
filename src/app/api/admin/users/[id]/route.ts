@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { sendAccountApprovalEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,15 @@ export async function PATCH(
 
     const body = await request.json();
     const { role, departmentId, password } = body;
+
+    // Get the current user to check if role is changing from PENDING
+    const currentUser = await prisma.user.findUnique({
+      where: { id: params.id },
+      select: { role: true },
+    });
+
+    const isApproval =
+      currentUser?.role === "PENDING" && role && role !== "PENDING";
 
     // Prepare update data
     const updateData: any = {};
@@ -46,6 +56,18 @@ export async function PATCH(
         },
       },
     });
+
+    // Send approval email if user is being approved
+    if (isApproval) {
+      // Fetch the complete user object for the email
+      const fullUser = await prisma.user.findUnique({
+        where: { id: user.id },
+      });
+
+      if (fullUser) {
+        await sendAccountApprovalEmail(fullUser);
+      }
+    }
 
     return NextResponse.json(user);
   } catch (error) {

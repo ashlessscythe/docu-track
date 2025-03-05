@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { WelcomeEmail } from "@/components/emails/WelcomeEmail";
 import { PasswordResetEmail } from "@/components/emails/PasswordResetEmail";
+import { AccountApprovalEmail } from "@/components/emails/AccountApprovalEmail";
 import { User } from "@prisma/client";
 
 // Initialize Resend with API key
@@ -65,6 +66,34 @@ export async function sendPasswordResetEmail(
     return { success: true, data };
   } catch (error) {
     console.error("Exception sending password reset email:", error);
+    return { success: false, error };
+  }
+}
+
+/**
+ * Send an account approval email to a user
+ */
+export async function sendAccountApprovalEmail(user: User) {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: user.email,
+      subject: `Your ${appName} Account Has Been Approved`,
+      react: AccountApprovalEmail({
+        name: user.name,
+        appName,
+        role: user.role,
+      }),
+    });
+
+    if (error) {
+      console.error("Error sending account approval email:", error);
+      return { success: false, error };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error("Exception sending account approval email:", error);
     return { success: false, error };
   }
 }

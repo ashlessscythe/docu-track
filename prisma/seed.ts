@@ -10,6 +10,7 @@ interface SeedArgs {
   "use-faker": boolean;
   count: number;
   clear: boolean;
+  destructive: boolean;
 }
 
 // Parse command line arguments using yargs
@@ -32,6 +33,13 @@ const parseArgs = async (): Promise<SeedArgs> => {
         alias: "c",
         type: "boolean",
         description: "Clear existing data before seeding",
+        default: false,
+      },
+      destructive: {
+        alias: "d",
+        type: "boolean",
+        description:
+          "Required flag when using --clear to confirm destructive operation",
         default: false,
       },
     })
@@ -123,9 +131,11 @@ const defaultTemplates = [
 const createFakeUser = async (departmentIds: string[]) => {
   const role = getRandomRole();
   const password = `${role.toLowerCase()}pass`;
+  const firstName = faker.person.firstName();
+  const lastName = faker.person.lastName();
   return {
-    email: faker.internet.email(),
-    name: faker.person.fullName(),
+    email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+    name: `${firstName} ${lastName}`,
     role,
     password: await hashPassword(password),
     departmentId:
@@ -240,9 +250,25 @@ async function main() {
     useFaker: args["use-faker"],
     count: args.count,
     clear: args.clear,
+    destructive: args.destructive,
   });
 
+  // Check if database is empty
+  const userCount = await prisma.user.count();
+  const departmentCount = await prisma.department.count();
+  const documentTypeCount = await prisma.documentType.count();
+  const isDbEmpty =
+    userCount === 0 && departmentCount === 0 && documentTypeCount === 0;
+
+  // Handle clear operation with destructive flag check
   if (args.clear) {
+    if (!args.destructive) {
+      console.error("Error: --destructive flag is required when using --clear");
+      console.error("This is to prevent accidental data loss.");
+      console.error("Use: npx ts-node prisma/seed.ts --clear --destructive");
+      process.exit(1);
+    }
+
     console.log("Clearing existing data...");
     await prisma.comment.deleteMany();
     await prisma.document.deleteMany();
@@ -250,153 +276,235 @@ async function main() {
     await prisma.user.deleteMany();
     await prisma.department.deleteMany();
     await prisma.documentType.deleteMany();
+  } else if (!isDbEmpty) {
+    console.log("Database already contains data. Running in idempotent mode.");
+    console.log("To clear existing data, use --clear --destructive flags.");
   }
 
-  // Create departments
-  console.log("Creating departments...");
-  const departments = await Promise.all(
-    defaultDepartments.map((dept) => prisma.department.create({ data: dept }))
-  );
-  const departmentIds = departments.map((d) => d.id);
+  // Create or get departments
+  console.log("Setting up departments...");
+  let departments = [];
+  let departmentIds = [];
 
-  // Create document types
-  console.log("Creating document types...");
-  const documentTypes = await Promise.all(
-    defaultDocumentTypes.map((type) =>
-      prisma.documentType.create({ data: type })
-    )
-  );
-  const documentTypeIds = documentTypes.map((d) => d.id);
-
-  // Create default templates
-  console.log("Creating default templates...");
-  await Promise.all(
-    defaultTemplates.map((template, index) =>
-      prisma.template.create({
-        data: {
-          ...template,
-          departmentId: index >= 2 ? departments[index - 2].id : null, // Assign department-specific templates
-          typeId: documentTypes[index % documentTypes.length].id,
-        },
-      })
-    )
-  );
-
-  // Always create Bob first
-  console.log("Creating Bob (admin user)...");
-  const bobData = defaultUsers[0];
-  const hashedBobPassword = await hashPassword(bobData.password);
-  const bob = await prisma.user.create({
-    data: {
-      ...bobData,
-      password: hashedBobPassword,
-      departmentId: departments[0].id, // Assign Bob to IT department
-    },
-  });
-
-  if (args["use-faker"]) {
-    console.log(`Generating ${args.count} fake records...`);
-
-    // Create additional users
-    const users = await Promise.all(
-      Array.from({ length: args.count }, async () => {
-        const userData = await createFakeUser(departmentIds);
-        return await prisma.user.create({ data: userData });
-      })
-    );
-
-    // Create documents and randomly assign approvers for some documents
-    const approvers = users.filter((user) => user.role === UserRole.APPROVER);
-
-    await Promise.all(
-      users
-        .filter(
-          (user) =>
-            user.role === UserRole.SUBMITTER || user.role === UserRole.PENDING
-        )
-        .flatMap((user) =>
-          Array.from(
-            { length: Math.floor(Math.random() * 5) + 1 },
-            async () => {
-              const documentData = createFakeDocument(
-                user.id,
-                departmentIds,
-                documentTypeIds
-              );
-              // Randomly assign an approver to some documents
-              if (approvers.length > 0 && Math.random() > 0.5) {
-                const approver = faker.helpers.arrayElement(approvers);
-                return await prisma.document.create({
-                  data: {
-                    ...documentData,
-                    approverId: approver.id,
-                  },
-                });
-              }
-              return await prisma.document.create({ data: documentData });
-            }
-          )
-        )
-    );
-
-    // Create additional fake templates
-    console.log("Creating fake templates...");
-    await Promise.all(
-      Array.from({ length: Math.floor(args.count / 2) }, async () => {
-        const templateData = createFakeTemplate(departmentIds, documentTypeIds);
-        return await prisma.template.create({ data: templateData });
-      })
+  if (departmentCount === 0) {
+    // Create departments if none exist
+    departments = await Promise.all(
+      defaultDepartments.map((dept) => prisma.department.create({ data: dept }))
     );
   } else {
-    console.log("Using default seed data...");
+    // Get existing departments
+    departments = await prisma.department.findMany();
+    console.log(`Found ${departments.length} existing departments`);
+  }
+  departmentIds = departments.map((d) => d.id);
 
-    // Create remaining default users with hashed passwords
-    const users = await Promise.all(
-      defaultUsers.slice(1).map(async (userData) => {
-        const hashedPassword = await hashPassword(userData.password);
-        return await prisma.user.create({
-          data: {
-            ...userData,
-            password: hashedPassword,
-            departmentId:
-              userData.role === UserRole.PENDING
-                ? null
-                : faker.helpers.arrayElement(departmentIds),
-          },
-        });
-      })
+  // Create or get document types
+  console.log("Setting up document types...");
+  let documentTypes = [];
+  let documentTypeIds = [];
+
+  if (documentTypeCount === 0) {
+    // Create document types if none exist
+    documentTypes = await Promise.all(
+      defaultDocumentTypes.map((type) =>
+        prisma.documentType.create({ data: type })
+      )
     );
+  } else {
+    // Get existing document types
+    documentTypes = await prisma.documentType.findMany();
+    console.log(`Found ${documentTypes.length} existing document types`);
+  }
+  documentTypeIds = documentTypes.map((d) => d.id);
 
-    // Create some default documents with random statuses
-    await Promise.all([
-      prisma.document.create({
-        data: {
-          name: "Sample Document 1.pdf",
-          typeId: documentTypes[0].id, // PDF type
-          description: "A sample document for testing",
-          departmentId: departments[0].id, // IT department
-          status: getRandomStatus(),
-          content: Buffer.from("Sample document content 1"),
-          mimeType: "application/pdf",
-          submitterId: users[1].id, // Assign to submitter user
-          approverId: users[0].id, // Assign to approver user
-        },
-      }),
-      prisma.document.create({
-        data: {
-          name: "Sample Document 2.docx",
-          typeId: documentTypes[1].id, // DOCX type
-          description: "Another sample document",
-          departmentId: departments[1].id, // HR department
-          status: getRandomStatus(),
-          content: Buffer.from("Sample document content 2"),
-          mimeType:
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          submitterId: users[1].id, // Assign to submitter user
-          approverId: users[0].id, // Assign to approver user
-        },
-      }),
-    ]);
+  // Check if templates exist
+  const templateCount = await prisma.template.count();
+
+  // Create default templates if none exist
+  if (templateCount === 0) {
+    console.log("Creating default templates...");
+    await Promise.all(
+      defaultTemplates.map((template, index) =>
+        prisma.template.create({
+          data: {
+            ...template,
+            departmentId:
+              index >= 2
+                ? departments[Math.min(index - 2, departments.length - 1)].id
+                : null,
+            typeId: documentTypes[index % documentTypes.length].id,
+          },
+        })
+      )
+    );
+  } else {
+    console.log(`Found ${templateCount} existing templates`);
+  }
+
+  // Check if admin user exists
+  const adminExists = await prisma.user.findFirst({
+    where: { email: defaultUsers[0].email },
+  });
+
+  let bob;
+  if (!adminExists) {
+    // Create admin user if doesn't exist
+    console.log("Creating Bob (admin user)...");
+    const bobData = defaultUsers[0];
+    const hashedBobPassword = await hashPassword(bobData.password);
+    bob = await prisma.user.create({
+      data: {
+        ...bobData,
+        password: hashedBobPassword,
+        departmentId: departments[0].id, // Assign Bob to IT department
+      },
+    });
+  } else {
+    console.log("Admin user already exists");
+    bob = adminExists;
+  }
+
+  // Check if we need to create additional data
+  const existingUserCount = await prisma.user.count();
+  const existingDocumentCount = await prisma.document.count();
+
+  // Only create additional data if we're clearing or the DB is empty
+  if (args.clear || isDbEmpty || existingUserCount <= 1) {
+    if (args["use-faker"]) {
+      // Calculate how many additional users to create
+      const additionalCount = Math.max(0, args.count - (existingUserCount - 1));
+      if (additionalCount > 0) {
+        console.log(`Generating ${additionalCount} fake records...`);
+
+        // Create additional users
+        const users = await Promise.all(
+          Array.from({ length: additionalCount }, async () => {
+            const userData = await createFakeUser(departmentIds);
+            return await prisma.user.create({ data: userData });
+          })
+        );
+
+        // Get all users including existing ones for document creation
+        const allUsers = await prisma.user.findMany();
+        const approvers = allUsers.filter(
+          (user) => user.role === UserRole.APPROVER
+        );
+
+        // Create documents and randomly assign approvers for some documents
+        await Promise.all(
+          allUsers
+            .filter(
+              (user) =>
+                user.role === UserRole.SUBMITTER ||
+                user.role === UserRole.PENDING
+            )
+            .flatMap((user) =>
+              Array.from(
+                { length: Math.floor(Math.random() * 5) + 1 },
+                async () => {
+                  const documentData = createFakeDocument(
+                    user.id,
+                    departmentIds,
+                    documentTypeIds
+                  );
+                  // Randomly assign an approver to some documents
+                  if (approvers.length > 0 && Math.random() > 0.5) {
+                    const approver = faker.helpers.arrayElement(approvers);
+                    return await prisma.document.create({
+                      data: {
+                        ...documentData,
+                        approverId: approver.id,
+                      },
+                    });
+                  }
+                  return await prisma.document.create({ data: documentData });
+                }
+              )
+            )
+        );
+
+        // Create additional fake templates
+        console.log("Creating fake templates...");
+        await Promise.all(
+          Array.from({ length: Math.floor(additionalCount / 2) }, async () => {
+            const templateData = createFakeTemplate(
+              departmentIds,
+              documentTypeIds
+            );
+            return await prisma.template.create({ data: templateData });
+          })
+        );
+      } else {
+        console.log("Database already has sufficient fake data");
+      }
+    } else if (existingUserCount <= 1) {
+      console.log("Creating default seed data...");
+
+      // Create remaining default users with hashed passwords
+      const existingEmails = (await prisma.user.findMany()).map((u) => u.email);
+      const usersToCreate = defaultUsers
+        .slice(1)
+        .filter((u) => !existingEmails.includes(u.email));
+
+      const users = await Promise.all(
+        usersToCreate.map(async (userData) => {
+          const hashedPassword = await hashPassword(userData.password);
+          return await prisma.user.create({
+            data: {
+              ...userData,
+              password: hashedPassword,
+              departmentId:
+                userData.role === UserRole.PENDING
+                  ? null
+                  : faker.helpers.arrayElement(departmentIds),
+            },
+          });
+        })
+      );
+
+      // Only create sample documents if none exist
+      if (existingDocumentCount === 0 && users.length > 0) {
+        // Create some default documents with random statuses
+        await Promise.all([
+          prisma.document.create({
+            data: {
+              name: "Sample Document 1.pdf",
+              typeId: documentTypes[0].id, // PDF type
+              description: "A sample document for testing",
+              departmentId: departments[0].id, // IT department
+              status: getRandomStatus(),
+              content: Buffer.from("Sample document content 1"),
+              mimeType: "application/pdf",
+              submitterId: users[0].id, // Assign to first created user
+              approverId: bob.id, // Assign to admin user
+            },
+          }),
+          prisma.document.create({
+            data: {
+              name: "Sample Document 2.docx",
+              typeId: documentTypes[1].id, // DOCX type
+              description: "Another sample document",
+              departmentId: departments[1].id, // HR department
+              status: getRandomStatus(),
+              content: Buffer.from("Sample document content 2"),
+              mimeType:
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              submitterId: users[0].id, // Assign to first created user
+              approverId: bob.id, // Assign to admin user
+            },
+          }),
+        ]);
+      }
+    } else {
+      console.log("Database already has sufficient default data");
+    }
+  } else {
+    console.log(
+      "Database already populated, skipping additional data creation"
+    );
+    console.log(
+      `Current counts: ${existingUserCount} users, ${existingDocumentCount} documents`
+    );
   }
 
   console.log("Seeding completed!");

@@ -12,22 +12,22 @@ import {
   Section,
   Tailwind,
   Text,
-  Row,
-  Column,
 } from "@react-email/components";
 import * as React from "react";
 
-interface WelcomeEmailProps {
+interface AccountApprovalEmailProps {
   name: string;
   appName: string;
+  role: string;
 }
 
-export const WelcomeEmail: React.FC<Readonly<WelcomeEmailProps>> = ({
-  name,
-  appName,
-}) => {
-  const previewText = `Welcome to ${appName}!`;
+export const AccountApprovalEmail: React.FC<
+  Readonly<AccountApprovalEmailProps>
+> = ({ name, appName, role }) => {
+  const previewText = `Your ${appName} account has been approved!`;
   const currentYear = new Date().getFullYear();
+  const roleDisplay =
+    role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
 
   return (
     <Html>
@@ -46,36 +46,23 @@ export const WelcomeEmail: React.FC<Readonly<WelcomeEmailProps>> = ({
               />
             </Section>
             <Heading className="text-gray-800 text-[24px] font-bold text-center p-0 my-[30px] mx-0">
-              Welcome to <span className="text-blue-600">{appName}</span>!
+              Account Approved!
             </Heading>
             <Text className="text-gray-700 text-[16px] leading-[24px]">
               Hello {name},
             </Text>
             <Text className="text-gray-700 text-[16px] leading-[24px]">
-              Thank you for joining{" "}
-              <span className="font-semibold">{appName}</span>. We&apos;re
-              excited to have you on board!
-            </Text>
-            <Text className="text-gray-700 text-[16px] leading-[24px]">
-              Your account is currently pending approval. You will receive an
-              email notification once your account has been approved.
+              Great news! Your account on{" "}
+              <span className="font-semibold">{appName}</span> has been
+              approved.
             </Text>
 
-            <Section className="bg-blue-50 rounded-md p-[20px] border border-blue-100 my-[24px]">
-              <Text className="text-gray-800 text-[16px] leading-[24px] m-0 font-medium">
-                With {appName}, you can:
+            <Section className="bg-green-50 rounded-md p-[20px] border border-green-100 my-[24px]">
+              <Text className="text-gray-800 text-[16px] leading-[24px] m-0">
+                Your account has been assigned the{" "}
+                <span className="font-semibold">{roleDisplay}</span> role. You
+                can now access all features available to your role.
               </Text>
-              <ul className="pl-[20px] mt-[8px] mb-0">
-                <li className="text-gray-700 text-[15px] leading-[24px]">
-                  Easily manage document submissions
-                </li>
-                <li className="text-gray-700 text-[15px] leading-[24px]">
-                  Track approval processes
-                </li>
-                <li className="text-gray-700 text-[15px] leading-[24px]">
-                  Collaborate with your team
-                </li>
-              </ul>
             </Section>
 
             <Section className="text-center mt-[32px] mb-[32px]">
@@ -83,7 +70,7 @@ export const WelcomeEmail: React.FC<Readonly<WelcomeEmailProps>> = ({
                 className="bg-blue-600 hover:bg-blue-700 rounded-md text-white text-[14px] font-semibold no-underline text-center px-6 py-3 transition-colors"
                 href={`${process.env.NEXTAUTH_URL}/dashboard`}
               >
-                Get Started
+                Go to Dashboard
               </Button>
             </Section>
 
