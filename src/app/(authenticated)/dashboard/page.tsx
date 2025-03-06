@@ -29,7 +29,8 @@ export default async function DashboardPage() {
           Welcome to {APP_NAME}
         </h1>
         <p className="p-3 text-muted-foreground text-lg">
-          You are logged in as a {session.user.role.toLowerCase()} user
+          You are logged in as a{" "}
+          {session.user.role ? session.user.role.toLowerCase() : "user"} user
         </p>
       </div>
 
@@ -99,7 +100,7 @@ export default async function DashboardPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Role</span>
                 <span className="text-sm text-muted-foreground capitalize">
-                  {session.user.role.toLowerCase()}
+                  {session.user.role ? session.user.role.toLowerCase() : "user"}
                 </span>
               </div>
               <div className="flex items-center justify-between">

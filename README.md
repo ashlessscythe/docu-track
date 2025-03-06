@@ -31,6 +31,9 @@ A powerful admin dashboard provides comprehensive control over documents, users,
   - Admin access to all documents
   - Approve/Reject/Review actions
   - Document status tracking
+- 🔒 JWT versioning for secure deployments
+  - Force re-authentication after system updates
+  - Configurable via JWT_VERSION environment variable
 - 🎨 Modern UI with shadcn/ui components
 - 🌙 Dark mode support (coming soon)
 - 🔄 Real-time updates
@@ -67,7 +70,7 @@ A powerful admin dashboard provides comprehensive control over documents, users,
    cp .env.example .env
    ```
 
-   Fill in your environment variables in the `.env` file.
+   Fill in your environment variables in the `.env` file. Make sure to set the `JWT_VERSION` to control authentication versioning.
 
 4. Set up the database:
 

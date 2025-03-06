@@ -6,6 +6,11 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
+    // Check if token has error flag and redirect to signin
+    if (token?.error === "RefetchUser") {
+      return NextResponse.redirect(new URL("/signin", req.url));
+    }
+
     // Allow access to home page without a token
     if (path === "/") {
       return NextResponse.next();
@@ -64,6 +69,10 @@ export default withAuth(
           req.nextUrl.pathname.startsWith("/api/auth")
         ) {
           return true;
+        }
+        // Check if token has error flag
+        if (token?.error === "RefetchUser") {
+          return false;
         }
         // Require token for all other pages
         return !!token;

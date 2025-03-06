@@ -1,10 +1,18 @@
 import { Header } from "@/components/Header";
+import { getServerSession } from "next-auth";
+import { authOptions, sessionHasError } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-export default function AuthenticatedLayout({
+export default async function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getServerSession(authOptions);
+
+  if (!session || (await sessionHasError(session))) {
+    redirect("/signin");
+  }
   return (
     <div className="min-h-screen bg-muted">
       <Header />

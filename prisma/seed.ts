@@ -139,7 +139,7 @@ const createFakeUser = async (departmentIds: string[]) => {
     role,
     password: await hashPassword(password),
     departmentId:
-      role === UserRole.PENDING
+      role === UserRole.PENDING || departmentIds.length === 0
         ? null
         : faker.helpers.arrayElement(departmentIds),
   };
@@ -167,11 +167,19 @@ const createFakeDocument = (
   const fileType = faker.helpers.arrayElement(fileTypes);
   const status = getRandomStatus();
 
+  // Ensure we have at least one document type
+  if (documentTypeIds.length === 0) {
+    throw new Error("Cannot create document without document types");
+  }
+
   return {
     name: `${faker.system.fileName()}.${fileType.ext}`,
     typeId: faker.helpers.arrayElement(documentTypeIds),
     description: faker.lorem.paragraph(),
-    departmentId: faker.helpers.arrayElement(departmentIds),
+    departmentId:
+      departmentIds.length > 0
+        ? faker.helpers.arrayElement(departmentIds)
+        : null,
     status,
     content,
     mimeType: fileType.mime,
@@ -198,13 +206,20 @@ const createFakeTemplate = (
 
   const fileType = faker.helpers.arrayElement(fileTypes);
 
+  // Ensure we have at least one document type
+  if (documentTypeIds.length === 0) {
+    throw new Error("Cannot create template without document types");
+  }
+
   return {
     name: `${faker.word.words(3)} Template.${fileType.ext}`,
     description: faker.lorem.sentence(),
     content: Buffer.from(faker.lorem.paragraphs()),
     mimeType: fileType.mime,
     departmentId:
-      Math.random() > 0.5 ? faker.helpers.arrayElement(departmentIds) : null,
+      departmentIds.length > 0 && Math.random() > 0.5
+        ? faker.helpers.arrayElement(departmentIds)
+        : null,
     typeId: faker.helpers.arrayElement(documentTypeIds),
   };
 };
@@ -329,7 +344,7 @@ async function main() {
           data: {
             ...template,
             departmentId:
-              index >= 2
+              index >= 2 && departments.length > 0
                 ? departments[Math.min(index - 2, departments.length - 1)].id
                 : null,
             typeId: documentTypes[index % documentTypes.length].id,
@@ -356,7 +371,7 @@ async function main() {
       data: {
         ...bobData,
         password: hashedBobPassword,
-        departmentId: departments[0].id, // Assign Bob to IT department
+        departmentId: departments.length > 0 ? departments[0].id : null, // Assign Bob to IT department if it exists
       },
     });
   } else {
@@ -368,11 +383,34 @@ async function main() {
   const existingUserCount = await prisma.user.count();
   const existingDocumentCount = await prisma.document.count();
 
-  // Only create additional data if we're clearing or the DB is empty
-  if (args.clear || isDbEmpty || existingUserCount <= 1) {
+  // Check if count parameter was explicitly passed
+  const countExplicitlyProvided = process.argv.some(
+    (arg) => arg === "--count" || arg === "-n"
+  );
+
+  // Log non-idempotent mode when count is explicitly provided
+  if (countExplicitlyProvided && !isDbEmpty && existingUserCount > 1) {
+    console.log(
+      "Count parameter explicitly provided. Running in non-idempotent mode."
+    );
+    console.log(
+      `Will add ${args.count} new records regardless of existing data.`
+    );
+  }
+
+  // Create additional data if we're clearing, DB is empty, few users exist, or count was explicitly provided
+  if (
+    args.clear ||
+    isDbEmpty ||
+    existingUserCount <= 1 ||
+    countExplicitlyProvided
+  ) {
     if (args["use-faker"]) {
       // Calculate how many additional users to create
-      const additionalCount = Math.max(0, args.count - (existingUserCount - 1));
+      // If count was explicitly provided, use that exact number, otherwise calculate the difference
+      const additionalCount = countExplicitlyProvided
+        ? args.count
+        : Math.max(0, args.count - (existingUserCount - 1));
       if (additionalCount > 0) {
         console.log(`Generating ${additionalCount} fake records...`);
 
@@ -471,7 +509,7 @@ async function main() {
               name: "Sample Document 1.pdf",
               typeId: documentTypes[0].id, // PDF type
               description: "A sample document for testing",
-              departmentId: departments[0].id, // IT department
+              departmentId: departments.length > 0 ? departments[0].id : null, // IT department if it exists
               status: getRandomStatus(),
               content: Buffer.from("Sample document content 1"),
               mimeType: "application/pdf",
@@ -484,7 +522,12 @@ async function main() {
               name: "Sample Document 2.docx",
               typeId: documentTypes[1].id, // DOCX type
               description: "Another sample document",
-              departmentId: departments[1].id, // HR department
+              departmentId:
+                departments.length > 1
+                  ? departments[1].id
+                  : departments.length > 0
+                    ? departments[0].id
+                    : null, // HR department if it exists, otherwise IT, or null
               status: getRandomStatus(),
               content: Buffer.from("Sample document content 2"),
               mimeType:

@@ -29,6 +29,7 @@ interface ExtendedJWT extends JWT {
   departmentId?: string | null;
   updatedAt: number;
   error?: "RefetchUser";
+  version?: number;
 }
 
 // Extend the User type
@@ -38,6 +39,11 @@ interface ExtendedUser extends NextAuthUser {
   departmentId?: string | null;
   updatedAt: number;
 }
+
+// Get JWT version from environment
+const JWT_VERSION = process.env.JWT_VERSION
+  ? parseInt(process.env.JWT_VERSION)
+  : 1;
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -118,19 +124,21 @@ export const authOptions: NextAuthOptions = {
           role: (user as ExtendedUser).role,
           departmentId: (user as ExtendedUser).departmentId,
           updatedAt: (user as ExtendedUser).updatedAt,
+          version: JWT_VERSION,
         } as JWT;
       }
 
-      // Check if user still exists and hasn't been modified
+      // Check if user still exists, hasn't been modified, and JWT version matches
       const existingUser = await prisma.user.findUnique({
         where: { id: token.id },
       });
 
       if (
         !existingUser ||
-        existingUser.updatedAt.getTime() !== (token as ExtendedJWT).updatedAt
+        existingUser.updatedAt.getTime() !== (token as ExtendedJWT).updatedAt ||
+        (token as ExtendedJWT).version !== JWT_VERSION
       ) {
-        // User was deleted or modified, return minimal JWT to force re-auth
+        // User was deleted, modified, or JWT version changed - force re-auth
         return { ...token, error: "RefetchUser" } as JWT;
       }
 
