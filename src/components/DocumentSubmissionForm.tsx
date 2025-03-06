@@ -223,7 +223,7 @@ export function DocumentSubmissionForm({
             <Input
               type="file"
               onChange={handleFileChange}
-              accept=".pdf,.doc,.docx,.txt"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
               className="cursor-pointer"
             />
           </FormControl>
