@@ -1,3 +1,4 @@
+import { LOGO_URL } from "@/src/lib/config";
 import {
   Body,
   Button,
@@ -38,11 +39,11 @@ export const AccountApprovalEmail: React.FC<
           <Container className="border border-solid border-gray-200 rounded-lg my-[40px] mx-auto p-[20px] max-w-[465px] bg-white shadow-sm">
             <Section className="mt-[32px]">
               <Img
-                src={`${process.env.NEXT_PUBLIC_APP_URL}/images/logo.png`}
-                width="40"
-                height="40"
+                src={LOGO_URL}
+                width="60"
+                height="75"
                 alt={appName}
-                className="my-0 mx-auto"
+                className="my-0 mx-auto rounded-lg"
               />
             </Section>
             <Heading className="text-gray-800 text-[24px] font-bold text-center p-0 my-[30px] mx-0">

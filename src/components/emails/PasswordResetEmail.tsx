@@ -14,6 +14,8 @@ import {
   Text,
 } from "@react-email/components";
 import * as React from "react";
+import { LOGO_URL } from "@/src/lib/config";
+import { LogOut } from "lucide-react";
 
 interface PasswordResetEmailProps {
   name: string;
@@ -35,7 +37,7 @@ export const PasswordResetEmail: React.FC<
           <Container className="border border-solid border-gray-200 rounded-lg my-[40px] mx-auto p-[20px] max-w-[465px] bg-white shadow-sm">
             <Section className="mt-[32px]">
               <Img
-                src={`${process.env.NEXTAUTH_URL}/images/logo.png`}
+                src={`${LOGO_URL}`}
                 width="40"
                 height="40"
                 alt={appName}

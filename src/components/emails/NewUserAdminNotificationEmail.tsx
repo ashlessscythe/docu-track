@@ -1,3 +1,4 @@
+import { LOGO_URL } from "@/src/lib/config";
 import {
   Body,
   Button,
@@ -32,6 +33,15 @@ export const NewUserAdminNotificationEmail: React.FC<
       <Tailwind>
         <Body className="bg-white my-auto mx-auto font-sans">
           <Container className="border border-solid border-[#eaeaea] rounded my-[40px] mx-auto p-[20px] w-[465px]">
+            <Section className="mt-[32px]">
+              <Img
+                src={`${LOGO_URL}`}
+                width="60"
+                height="75"
+                alt={appName}
+                className="my-0 mx-auto rounded-lg"
+              />
+            </Section>
             <Heading className="text-black text-[24px] font-normal text-center p-0 my-[30px] mx-0">
               New User Registration
             </Heading>
