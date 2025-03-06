@@ -3,11 +3,12 @@ import { WelcomeEmail } from "@/components/emails/WelcomeEmail";
 import { PasswordResetEmail } from "@/components/emails/PasswordResetEmail";
 import { AccountApprovalEmail } from "@/components/emails/AccountApprovalEmail";
 import { User } from "@prisma/client";
+import { config } from "@/lib/config";
 
 // Initialize Resend with API key
 const resend = new Resend(process.env.RESEND_API_KEY);
 const fromEmail = `${process.env.NEXT_PUBLIC_APP_NAME} <noreply@${process.env.EMAIL_FROM_DOMAIN}>`;
-const appName = process.env.NEXT_PUBLIC_APP_NAME || "DokuTrako";
+const appName = config.appName;
 
 /**
  * Send a welcome email to a new user
@@ -29,6 +30,55 @@ export async function sendWelcomeEmail(user: User) {
     return { success: true, data };
   } catch (error) {
     console.error("Exception sending welcome email:", error);
+    return { success: false, error };
+  }
+}
+
+import { NewUserAdminNotificationEmail } from "@/components/emails/NewUserAdminNotificationEmail";
+
+/**
+ * Send a notification email to all admins when a new user registers
+ */
+export async function sendAdminNewUserEmail(
+  adminEmails: { email: string }[],
+  newUser: User,
+  appName: string
+) {
+  try {
+    // Get base URL for dashboard link
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const dashboardUrl = `${baseUrl}/admin/users`;
+
+    // Extract all admin email addresses
+    const adminEmailAddresses = adminEmails.map((admin) => admin.email);
+
+    // If no admin emails, log warning and return
+    if (adminEmailAddresses.length === 0) {
+      console.warn("No admin emails found to send notification");
+      return { success: false, error: "No admin emails found" };
+    }
+
+    // Send a single email to all admins
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: adminEmailAddresses,
+      subject: `New User Registration on ${appName}`,
+      react: NewUserAdminNotificationEmail({
+        userName: newUser.name,
+        userEmail: newUser.email,
+        appName,
+        dashboardUrl,
+      }),
+    });
+
+    if (error) {
+      console.error("Error sending admin notification email:", error);
+      return { success: false, error };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error("Exception sending admin notification emails:", error);
     return { success: false, error };
   }
 }

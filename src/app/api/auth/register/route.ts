@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { UserRole } from "@prisma/client";
 import { z } from "zod";
-import { sendWelcomeEmail } from "@/lib/email";
+import { sendAdminNewUserEmail, sendWelcomeEmail } from "@/lib/email";
+import { config } from "@/src/lib/config";
 
 // Validation schema
 const registerSchema = z.object({
@@ -62,6 +63,25 @@ export async function POST(req: Request) {
     const emailResult = await sendWelcomeEmail(user);
     if (!emailResult.success) {
       console.error("Failed to send welcome email:", emailResult.error);
+    }
+
+    // send admins notification of new user
+    const adminEmails = await prisma.user.findMany({
+      where: {
+        role: UserRole.ADMIN,
+      },
+      select: {
+        email: true,
+      },
+    });
+
+    const noticeResult = await sendAdminNewUserEmail(
+      adminEmails,
+      user,
+      config.appName
+    );
+    if (!noticeResult.success) {
+      console.error(`Failed sending admin notification `);
     }
 
     // Return user data without sensitive information
