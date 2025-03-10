@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTheme } from "./theme-provider";
 import { Button } from "./ui/button";
 import { Moon, Sun } from "lucide-react";
+import { FeedbackDialog } from "./FeedbackDialog";
 
 export function Header() {
   const { data: session } = useSession();
@@ -95,6 +96,7 @@ export function Header() {
         </ul>
         {session && (
           <div className="flex items-center space-x-4">
+            <FeedbackDialog />
             <Button
               variant="ghost"
               size="icon"

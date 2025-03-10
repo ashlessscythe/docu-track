@@ -77,6 +77,16 @@ export default function AdminDashboard() {
             <Button className="w-full">Database Tools</Button>
           </Link>
         </Card>
+
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Feedback Management</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            View and manage user feedback submissions
+          </p>
+          <Link href="/admin/feedback">
+            <Button className="w-full">Manage Feedback</Button>
+          </Link>
+        </Card>
       </div>
     </div>
   );
