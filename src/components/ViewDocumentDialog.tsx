@@ -49,6 +49,7 @@ interface ViewDocumentDialogProps {
   onDocumentUpdate: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onBackToActions?: () => void;
 }
 
 export function ViewDocumentDialog({
@@ -58,6 +59,7 @@ export function ViewDocumentDialog({
   onDocumentUpdate,
   open,
   onOpenChange,
+  onBackToActions,
 }: ViewDocumentDialogProps) {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showCommentsDialog, setShowCommentsDialog] = useState(false);
@@ -305,13 +307,26 @@ export function ViewDocumentDialog({
                   accept=".pdf,.doc,.docx,.txt"
                 />
               </div>
-              <Button
-                onClick={handleDownload}
-                disabled={downloading}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                {downloading ? "Downloading..." : "Download"}
-              </Button>
+              <div className="space-x-2">
+                {onBackToActions && (
+                  <Button
+                    onClick={() => {
+                      onOpenChange(false);
+                      onBackToActions();
+                    }}
+                    variant="outline"
+                  >
+                    Back to Actions
+                  </Button>
+                )}
+                <Button
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  {downloading ? "Downloading..." : "Download"}
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>

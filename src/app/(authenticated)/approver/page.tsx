@@ -205,8 +205,10 @@ export default function ApproverPage() {
   const handleDocumentClick = (doc: DocumentWithRelations) => {
     if (doc.status === "PENDING") {
       setActionDoc(doc);
+      setSelectedDoc(null);
       setActionDialogOpen(true);
     } else {
+      setActionDoc(null);
       setSelectedDoc(formatDocumentForView(doc));
       setViewDialogOpen(true);
     }
@@ -303,11 +305,32 @@ export default function ApproverPage() {
               document={selectedDoc}
               onDocumentUpdate={fetchDocuments}
               open={viewDialogOpen}
-              onOpenChange={setViewDialogOpen}
+              onOpenChange={(open) => {
+                setViewDialogOpen(open);
+                if (!open && !actionDialogOpen) {
+                  // Reset selectedDoc and actionDoc when closing the dialog
+                  setSelectedDoc(null);
+                  setActionDoc(null);
+                }
+              }}
+              onBackToActions={
+                actionDoc && actionDoc.status === "PENDING"
+                  ? () => setActionDialogOpen(true)
+                  : undefined
+              }
             />
           )}
 
-          <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
+          <Dialog
+            open={actionDialogOpen}
+            onOpenChange={(open) => {
+              setActionDialogOpen(open);
+              if (!open && !viewDialogOpen) {
+                // Reset actionDoc when closing the dialog if not going to view details
+                setActionDoc(null);
+              }
+            }}
+          >
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Document Actions</DialogTitle>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -54,36 +54,39 @@ export default function FeedbackManagement() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
-  const fetchFeedback = async (page = 1, status: string | null = null) => {
-    setLoading(true);
-    try {
-      let url = `/api/feedback?page=${page}&limit=${pagination.limit}`;
-      if (status) {
-        url += `&status=${status}`;
-      }
+  const fetchFeedback = useCallback(
+    async (page = 1, status: string | null = null) => {
+      setLoading(true);
+      try {
+        let url = `/api/feedback?page=${page}&limit=${pagination.limit}`;
+        if (status) {
+          url += `&status=${status}`;
+        }
 
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error("Failed to fetch feedback");
-      }
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error("Failed to fetch feedback");
+        }
 
-      const data = await response.json();
-      setFeedback(data.feedback);
-      setPagination(data.pagination);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load feedback. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+        const data = await response.json();
+        setFeedback(data.feedback);
+        setPagination(data.pagination);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load feedback. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [pagination.limit, toast]
+  );
 
   useEffect(() => {
     fetchFeedback(pagination.page, statusFilter);
-  }, [pagination.page, statusFilter]);
+  }, [pagination.page, statusFilter, fetchFeedback]);
 
   const handleStatusChange = async (
     feedbackId: string,
