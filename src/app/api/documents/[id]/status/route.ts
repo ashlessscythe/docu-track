@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DocumentStatus } from "@prisma/client";
+import { sendDocumentActionEmail } from "@/lib/email";
 
 // Helper function to create system comment
 async function createSystemComment(
@@ -110,6 +111,33 @@ async function handleStatusUpdate(
         type: true,
       },
     });
+
+    // Get all comments for the document to include in the email
+    const comments = await prisma.comment.findMany({
+      where: {
+        documentId,
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 5, // Limit to the 5 most recent comments
+    });
+
+    // Send email notification for status changes that require notification
+    if (["APPROVED", "REJECTED", "NEEDS_REVIEW"].includes(status)) {
+      // Get base URL for dashboard link
+      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
+      // Send email to document submitter
+      await sendDocumentActionEmail(updatedDocument, user, comments, baseUrl);
+    }
 
     // Serialize dates before sending response
     const serializedDocument = {

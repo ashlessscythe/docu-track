@@ -2,7 +2,8 @@ import { Resend } from "resend";
 import { WelcomeEmail } from "@/components/emails/WelcomeEmail";
 import { PasswordResetEmail } from "@/components/emails/PasswordResetEmail";
 import { AccountApprovalEmail } from "@/components/emails/AccountApprovalEmail";
-import { User } from "@prisma/client";
+import { DocumentActionEmail } from "@/components/emails/DocumentActionEmail";
+import { User, Document, DocumentStatus, Comment } from "@prisma/client";
 import { config } from "@/lib/config";
 
 // Initialize Resend with API key
@@ -144,6 +145,80 @@ export async function sendAccountApprovalEmail(user: User) {
     return { success: true, data };
   } catch (error) {
     console.error("Exception sending account approval email:", error);
+    return { success: false, error };
+  }
+}
+
+/**
+ * Send a document action email to the document submitter
+ */
+export async function sendDocumentActionEmail(
+  document: Document & {
+    submitter: { name: string; email: string };
+    type: { name: string };
+    department?: { name: string } | null;
+  },
+  actionByUser: User,
+  comments: (Comment & { user: { name: string } })[],
+  baseUrl: string
+) {
+  try {
+    // Determine action type based on document status
+    const actionType = document.status as
+      | "APPROVED"
+      | "REJECTED"
+      | "NEEDS_REVIEW";
+
+    // Create dashboard URL for the document
+    const dashboardUrl = `${baseUrl}/dashboard/documents/${document.id}`;
+
+    // Format comments for the email
+    const formattedComments = comments.map((comment) => ({
+      content: comment.content,
+      userName: comment.user.name,
+    }));
+
+    // Configure email subject based on action type
+    let subject = "";
+    switch (actionType) {
+      case "APPROVED":
+        subject = `Your Document "${document.name}" Has Been Approved`;
+        break;
+      case "REJECTED":
+        subject = `Your Document "${document.name}" Has Been Rejected`;
+        break;
+      case "NEEDS_REVIEW":
+        subject = `Your Document "${document.name}" Needs Review`;
+        break;
+      default:
+        subject = `Update on Your Document "${document.name}"`;
+    }
+
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: document.submitter.email,
+      subject,
+      react: DocumentActionEmail({
+        recipientName: document.submitter.name,
+        documentName: document.name,
+        documentType: document.type.name,
+        departmentName: document.department?.name,
+        appName,
+        actionType,
+        actionByName: actionByUser.name,
+        comments: formattedComments,
+        dashboardUrl,
+      }),
+    });
+
+    if (error) {
+      console.error("Error sending document action email:", error);
+      return { success: false, error };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error("Exception sending document action email:", error);
     return { success: false, error };
   }
 }
