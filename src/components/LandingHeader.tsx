@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
-import { Moon, Sun } from "lucide-react";
+import { Palette, Moon, Sun, Flame, Leaf, Droplet } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface LandingHeaderProps {
   session: any;
@@ -13,23 +19,64 @@ interface LandingHeaderProps {
 export function LandingHeader({ session, appName }: LandingHeaderProps) {
   const { theme, setTheme } = useTheme();
 
+  // Theme icon mapping
+  const getThemeIcon = () => {
+    switch (theme) {
+      case "light":
+        return <Sun className="h-5 w-5" />;
+      case "dark":
+        return <Moon className="h-5 w-5" />;
+      case "crimson":
+        return <Flame className="h-5 w-5" />;
+      case "mint":
+        return <Leaf className="h-5 w-5" />;
+      case "seafoam":
+        return <Droplet className="h-5 w-5" />;
+      default:
+        return <Palette className="h-5 w-5" />;
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-foreground">{appName}</h1>
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-          >
-            {theme === "light" ? (
-              <Moon className="h-5 w-5" />
-            ) : (
-              <Sun className="h-5 w-5" />
-            )}
-            <span className="sr-only">Toggle theme</span>
-          </Button>
+          {/* Theme Dropdown Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                {getThemeIcon()}
+                <span className="sr-only">Change theme</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="border border-background bg-background text-foreground rounded-md shadow-md"
+            >
+              <DropdownMenuItem onClick={() => setTheme("light")}>
+                <Sun className="mr-2 h-4 w-4" />
+                <span>Light</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("dark")}>
+                <Moon className="mr-2 h-4 w-4" />
+                <span>Dark</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("crimson")}>
+                <Flame className="mr-2 h-4 w-4" />
+                <span>Crimson</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("mint")}>
+                <Leaf className="mr-2 h-4 w-4" />
+                <span>Mint</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("seafoam")}>
+                <Droplet className="mr-2 h-4 w-4" />
+                <span>Seafoam</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {session ? (
             <>
               <Link href="/dashboard">

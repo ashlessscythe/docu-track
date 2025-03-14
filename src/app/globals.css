@@ -64,6 +64,99 @@
     --input: 216 34% 17%;
     --ring: 213 31% 91%;
   }
+
+  /* Crimson Theme */
+  .crimson {
+    --background: 0 0% 9%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 100% 60%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 63.9%;
+
+    --accent: 0 100% 60%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 0 100% 60%;
+  }
+
+  /* Mint Theme */
+  .mint {
+    --background: 180 5% 4%;
+    --foreground: 180 2% 90%;
+
+    --card: 180 5% 4%;
+    --card-foreground: 180 2% 90%;
+
+    --popover: 180 5% 4%;
+    --popover-foreground: 180 2% 90%;
+
+    --primary: 160 84% 39%;
+    --primary-foreground: 180 2% 90%;
+
+    --secondary: 180 3.7% 15.9%;
+    --secondary-foreground: 180 2% 90%;
+
+    --muted: 180 3.7% 15.9%;
+    --muted-foreground: 180 5% 64.9%;
+
+    --accent: 160 84% 39%;
+    --accent-foreground: 180 2% 90%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 180 2% 90%;
+
+    --border: 180 3.7% 15.9%;
+    --input: 180 3.7% 15.9%;
+    --ring: 160 84% 39%;
+  }
+
+  /* Seafoam Theme */
+  .seafoam {
+    --background: 180 20% 15%;
+    --foreground: 180 5% 98%;
+
+    --card: 180 20% 15%;
+    --card-foreground: 180 5% 98%;
+
+    --popover: 180 20% 15%;
+    --popover-foreground: 180 5% 98%;
+
+    --primary: 180 90% 50%;
+    --primary-foreground: 180 5% 98%;
+
+    --secondary: 180 15% 25%;
+    --secondary-foreground: 180 5% 98%;
+
+    --muted: 180 15% 25%;
+    --muted-foreground: 180 5% 70%;
+
+    --accent: 180 90% 50%;
+    --accent-foreground: 180 5% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 180 5% 98%;
+
+    --border: 180 15% 25%;
+    --input: 180 15% 25%;
+    --ring: 180 90% 50%;
+  }
 }
 
 @layer base {

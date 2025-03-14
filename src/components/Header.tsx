@@ -4,12 +4,36 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useTheme } from "./theme-provider";
 import { Button } from "./ui/button";
-import { Moon, Sun } from "lucide-react";
+import { Palette, Moon, Sun, Flame, Leaf, Droplet } from "lucide-react";
 import { FeedbackDialog } from "./FeedbackDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../../components/ui/dropdown-menu";
 
 export function Header() {
   const { data: session } = useSession();
   const { theme, setTheme } = useTheme();
+
+  // Theme icon mapping
+  const getThemeIcon = () => {
+    switch (theme) {
+      case "light":
+        return <Sun className="h-5 w-5" />;
+      case "dark":
+        return <Moon className="h-5 w-5" />;
+      case "crimson":
+        return <Flame className="h-5 w-5" />;
+      case "mint":
+        return <Leaf className="h-5 w-5" />;
+      case "seafoam":
+        return <Droplet className="h-5 w-5" />;
+      default:
+        return <Palette className="h-5 w-5" />;
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -97,18 +121,42 @@ export function Header() {
         {session && (
           <div className="flex items-center space-x-4">
             <FeedbackDialog />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-            >
-              {theme === "light" ? (
-                <Moon className="h-5 w-5" />
-              ) : (
-                <Sun className="h-5 w-5" />
-              )}
-              <span className="sr-only">Toggle theme</span>
-            </Button>
+
+            {/* Theme Dropdown Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  {getThemeIcon()}
+                  <span className="sr-only">Change theme</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="border border-background bg-background text-foreground rounded-md shadow-md"
+              >
+                <DropdownMenuItem onClick={() => setTheme("light")}>
+                  <Sun className="mr-2 h-4 w-4" />
+                  <span>Light</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("dark")}>
+                  <Moon className="mr-2 h-4 w-4" />
+                  <span>Dark</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("crimson")}>
+                  <Flame className="mr-2 h-4 w-4" />
+                  <span>Crimson</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("mint")}>
+                  <Leaf className="mr-2 h-4 w-4" />
+                  <span>Mint</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("seafoam")}>
+                  <Droplet className="mr-2 h-4 w-4" />
+                  <span>Seafoam</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Link
               href="/signout"
               className="border rounded px-2 py-1 text-white bg-red-600 hover:bg-red-700 transition-colors 

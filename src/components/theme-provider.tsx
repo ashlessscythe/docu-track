@@ -3,7 +3,8 @@
 import * as React from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark" | "system";
+// Updated Theme type to include only 5 visually distinct themes
+type Theme = "light" | "dark" | "crimson" | "mint" | "seafoam" | "system";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -30,7 +31,9 @@ export function ThemeProvider({
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
+
+    // Remove all possible theme classes
+    root.classList.remove("light", "dark", "crimson", "mint", "seafoam");
 
     if (theme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
@@ -43,6 +46,18 @@ export function ThemeProvider({
 
     root.classList.add(theme);
   }, [theme]);
+
+  // Try to load the theme from localStorage on initial render
+  useEffect(() => {
+    try {
+      const savedTheme = localStorage.getItem("theme") as Theme | null;
+      if (savedTheme) {
+        setTheme(savedTheme);
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }, []);
 
   const value = {
     theme,
