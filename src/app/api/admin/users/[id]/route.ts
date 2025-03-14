@@ -20,21 +20,38 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { role, departmentId, password } = body;
+    const { role, departmentId, password, name, email } = body;
 
     // Get the current user to check if role is changing from PENDING
     const currentUser = await prisma.user.findUnique({
       where: { id: params.id },
-      select: { role: true },
+      select: { role: true, email: true },
     });
+
+    if (!currentUser) {
+      return new NextResponse("User not found", { status: 404 });
+    }
 
     const isApproval =
       currentUser?.role === "PENDING" && role && role !== "PENDING";
+
+    // Check if email is being changed and if it's already in use
+    if (email && email !== currentUser.email) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (existingUser) {
+        return new NextResponse("Email already in use", { status: 400 });
+      }
+    }
 
     // Prepare update data
     const updateData: any = {};
     if (role !== undefined) updateData.role = role;
     if (departmentId !== undefined) updateData.departmentId = departmentId;
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
     if (password) {
       const hashedPassword = await bcrypt.hash(password, 12);
       updateData.password = hashedPassword;

@@ -27,15 +27,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { User, UserRole, Department } from "@/types";
+import EditUserModal from "@/components/EditUserModal";
 
 export default function UsersManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
-  const [newPassword, setNewPassword] = useState("");
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
@@ -110,27 +109,23 @@ export default function UsersManagement() {
     }
   };
 
-  const handleEditUser = async () => {
+  const handleEditUser = async (userData: {
+    id: string;
+    name: string;
+    email: string;
+    departmentId: string;
+    password?: string;
+  }) => {
     try {
-      const updateData: any = {};
-      if (selectedDepartmentId) {
-        updateData.departmentId = selectedDepartmentId;
-      }
-      if (newPassword) {
-        updateData.password = newPassword;
-      }
-
-      await fetch(`/api/admin/users/${selectedUserId}`, {
+      await fetch(`/api/admin/users/${userData.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updateData),
+        body: JSON.stringify(userData),
       });
       setIsEditUserOpen(false);
-      setNewPassword("");
-      setSelectedUserId("");
-      setSelectedDepartmentId("");
+      setSelectedUser(null);
       fetchUsers();
     } catch (error) {
       console.error("Failed to update user:", error);
@@ -165,8 +160,7 @@ export default function UsersManagement() {
   const roleOptions = Object.values(UserRole);
 
   const openEditModal = (user: User) => {
-    setSelectedUserId(user.id);
-    setSelectedDepartmentId(user.department?.id || "");
+    setSelectedUser(user);
     setIsEditUserOpen(true);
   };
 
@@ -272,53 +266,14 @@ export default function UsersManagement() {
         </Dialog>
       </div>
 
-      <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-department">Department</Label>
-              <Select
-                value={selectedDepartmentId}
-                onValueChange={setSelectedDepartmentId}
-              >
-                <SelectTrigger className="bg-background text-foreground border border-border rounded-md shadow-sm">
-                  <SelectValue>
-                    {selectedDepartmentId
-                      ? departments.find((d) => d.id === selectedDepartmentId)
-                          ?.name
-                      : "Select department"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
-                  {departments.map((dept) => (
-                    <SelectItem key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="new-password">New Password (optional)</Label>
-              <Input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setNewPassword(e.target.value)
-                }
-                placeholder="Leave blank to keep current password"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={handleEditUser}>Save Changes</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Edit User Modal Component */}
+      <EditUserModal
+        isOpen={isEditUserOpen}
+        onOpenChange={setIsEditUserOpen}
+        user={selectedUser}
+        departments={departments}
+        onSave={handleEditUser}
+      />
 
       <Table>
         <TableHeader>
