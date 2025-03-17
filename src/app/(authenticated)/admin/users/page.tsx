@@ -26,12 +26,13 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, UserRole, Department } from "@/types";
+import { User, UserRole, Department, Site } from "@/types";
 import EditUserModal from "@/components/EditUserModal";
 
 export default function UsersManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -41,11 +42,13 @@ export default function UsersManagement() {
     password: "",
     role: "",
     departmentId: "",
+    siteId: "",
   });
 
   useEffect(() => {
     fetchUsers();
     fetchDepartments();
+    fetchSites();
   }, []);
 
   const fetchUsers = async () => {
@@ -68,6 +71,16 @@ export default function UsersManagement() {
     }
   };
 
+  const fetchSites = async () => {
+    try {
+      const response = await fetch("/api/admin/sites");
+      const data = await response.json();
+      setSites(data);
+    } catch (error) {
+      console.error("Failed to fetch sites:", error);
+    }
+  };
+
   const handleAddUser = async () => {
     try {
       const response = await fetch("/api/admin/users", {
@@ -87,6 +100,7 @@ export default function UsersManagement() {
           password: "",
           role: "",
           departmentId: "",
+          siteId: "",
         });
       }
     } catch (error) {
@@ -114,6 +128,7 @@ export default function UsersManagement() {
     name: string;
     email: string;
     departmentId: string;
+    siteId?: string;
     password?: string;
   }) => {
     try {
@@ -156,8 +171,20 @@ export default function UsersManagement() {
     return department.name;
   };
 
+  const getSiteDisplay = (site: Site | undefined | null): string => {
+    if (!site) return "N/A";
+    return site.name;
+  };
+
   // Get all roles from the UserRole enum
   const roleOptions = Object.values(UserRole);
+
+  // Filter departments by selected site if a site is selected
+  const filteredDepartments = newUser.siteId
+    ? departments.filter(
+        (dept) => dept.siteId === newUser.siteId || !dept.siteId
+      )
+    : departments;
 
   const openEditModal = (user: User) => {
     setSelectedUser(user);
@@ -233,6 +260,32 @@ export default function UsersManagement() {
                   </SelectContent>
                 </Select>
               </div>
+              {sites.length > 0 && (
+                <div className="grid gap-2">
+                  <Label htmlFor="site">Site</Label>
+                  <Select
+                    value={newUser.siteId}
+                    onValueChange={(value: string) =>
+                      setNewUser({ ...newUser, siteId: value })
+                    }
+                  >
+                    <SelectTrigger className="bg-background text-foreground border border-border rounded-md shadow-sm">
+                      <SelectValue>
+                        {newUser.siteId
+                          ? sites.find((s) => s.id === newUser.siteId)?.name
+                          : "Select site"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
+                      {sites.map((site) => (
+                        <SelectItem key={site.id} value={site.id}>
+                          {site.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="grid gap-2">
                 <Label htmlFor="department">Department</Label>
                 <Select
@@ -250,7 +303,7 @@ export default function UsersManagement() {
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
-                    {departments.map((dept) => (
+                    {filteredDepartments.map((dept) => (
                       <SelectItem key={dept.id} value={dept.id}>
                         {dept.name}
                       </SelectItem>
@@ -272,6 +325,7 @@ export default function UsersManagement() {
         onOpenChange={setIsEditUserOpen}
         user={selectedUser}
         departments={departments}
+        sites={sites}
         onSave={handleEditUser}
       />
 
@@ -281,6 +335,7 @@ export default function UsersManagement() {
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Site</TableHead>
             <TableHead>Department</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -309,6 +364,7 @@ export default function UsersManagement() {
                   </SelectContent>
                 </Select>
               </TableCell>
+              <TableCell>{getSiteDisplay(user?.site)}</TableCell>
               <TableCell>{getDepartmentDisplay(user.department)}</TableCell>
               <TableCell className="space-x-2">
                 <Button variant="outline" onClick={() => openEditModal(user)}>

@@ -17,18 +17,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { Department } from "@/types";
+import type { Department, Site } from "@/types";
 
 export default function DepartmentsManagement() {
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
   const [isAddDepartmentOpen, setIsAddDepartmentOpen] = useState(false);
   const [isEditDepartmentOpen, setIsEditDepartmentOpen] = useState(false);
   const [newDepartment, setNewDepartment] = useState({
     name: "",
     description: "",
+    siteId: "",
   });
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(
     null
@@ -36,6 +45,7 @@ export default function DepartmentsManagement() {
 
   useEffect(() => {
     fetchDepartments();
+    fetchSites();
   }, []);
 
   const fetchDepartments = async () => {
@@ -45,6 +55,16 @@ export default function DepartmentsManagement() {
       setDepartments(data);
     } catch (error) {
       console.error("Failed to fetch departments:", error);
+    }
+  };
+
+  const fetchSites = async () => {
+    try {
+      const response = await fetch("/api/admin/sites");
+      const data = await response.json();
+      setSites(data);
+    } catch (error) {
+      console.error("Failed to fetch sites:", error);
     }
   };
 
@@ -61,7 +81,10 @@ export default function DepartmentsManagement() {
       if (response.ok) {
         setIsAddDepartmentOpen(false);
         fetchDepartments();
-        setNewDepartment({ name: "", description: "" });
+        setNewDepartment({ name: "", description: "", siteId: "" });
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || "Failed to add department");
       }
     } catch (error) {
       console.error("Failed to add department:", error);
@@ -82,6 +105,7 @@ export default function DepartmentsManagement() {
           body: JSON.stringify({
             name: editingDepartment.name,
             description: editingDepartment.description,
+            siteId: editingDepartment.siteId,
           }),
         }
       );
@@ -90,6 +114,9 @@ export default function DepartmentsManagement() {
         setIsEditDepartmentOpen(false);
         fetchDepartments();
         setEditingDepartment(null);
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || "Failed to update department");
       }
     } catch (error) {
       console.error("Failed to update department:", error);
@@ -114,6 +141,11 @@ export default function DepartmentsManagement() {
     } catch (error) {
       console.error("Failed to delete department:", error);
     }
+  };
+
+  const getSiteDisplay = (site: Site | undefined | null): string => {
+    if (!site) return "N/A";
+    return site.name;
   };
 
   return (
@@ -155,6 +187,33 @@ export default function DepartmentsManagement() {
                   }
                 />
               </div>
+              {sites.length > 0 && (
+                <div className="grid gap-2">
+                  <Label htmlFor="site">Site</Label>
+                  <Select
+                    value={newDepartment.siteId}
+                    onValueChange={(value: string) =>
+                      setNewDepartment({ ...newDepartment, siteId: value })
+                    }
+                  >
+                    <SelectTrigger className="bg-background text-foreground border border-border rounded-md shadow-sm">
+                      <SelectValue>
+                        {newDepartment.siteId
+                          ? sites.find((s) => s.id === newDepartment.siteId)
+                              ?.name
+                          : "Select site"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
+                      {sites.map((site) => (
+                        <SelectItem key={site.id} value={site.id}>
+                          {site.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <div className="flex justify-end">
               <Button onClick={handleAddDepartment}>Add Department</Button>
@@ -168,6 +227,7 @@ export default function DepartmentsManagement() {
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Description</TableHead>
+            <TableHead>Site</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -176,6 +236,7 @@ export default function DepartmentsManagement() {
             <TableRow key={department.id}>
               <TableCell>{department.name}</TableCell>
               <TableCell>{department.description || "N/A"}</TableCell>
+              <TableCell>{getSiteDisplay(department.site)}</TableCell>
               <TableCell className="space-x-2">
                 <Button
                   variant="outline"
@@ -232,6 +293,35 @@ export default function DepartmentsManagement() {
                 }
               />
             </div>
+            {sites.length > 0 && (
+              <div className="grid gap-2">
+                <Label htmlFor="edit-site">Site</Label>
+                <Select
+                  value={editingDepartment?.siteId || ""}
+                  onValueChange={(value: string) =>
+                    setEditingDepartment((prev) =>
+                      prev ? { ...prev, siteId: value } : null
+                    )
+                  }
+                >
+                  <SelectTrigger className="bg-background text-foreground border border-border rounded-md shadow-sm">
+                    <SelectValue>
+                      {editingDepartment?.siteId
+                        ? sites.find((s) => s.id === editingDepartment.siteId)
+                            ?.name
+                        : "Select site"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
+                    {sites.map((site) => (
+                      <SelectItem key={site.id} value={site.id}>
+                        {site.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <div className="flex justify-end">
             <Button onClick={handleEditDepartment}>Save Changes</Button>

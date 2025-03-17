@@ -59,6 +59,16 @@ export default function AdminDashboard() {
         </Card>
 
         <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Site Management</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Manage sites for multi-tenant functionality
+          </p>
+          <Link href="/admin/sites">
+            <Button className="w-full">Manage Sites</Button>
+          </Link>
+        </Card>
+
+        <Card className="p-6">
           <h2 className="text-xl font-semibold mb-4">System Reports</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             View system statistics and generate reports

@@ -18,16 +18,40 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { name, description } = body;
+    const { name, description, siteId } = body;
 
     if (!name) {
       return new NextResponse("Department name is required", { status: 400 });
     }
 
-    // Check if another department already has this name
+    // Get the current department to check its site
+    const currentDepartment = await prisma.department.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!currentDepartment) {
+      return new NextResponse("Department not found", { status: 404 });
+    }
+
+    // Determine the site ID to use
+    const departmentSiteId = siteId || currentDepartment.siteId;
+
+    // If site is changing, verify the new site exists
+    if (siteId && siteId !== currentDepartment.siteId) {
+      const site = await prisma.site.findUnique({
+        where: { id: siteId },
+      });
+
+      if (!site) {
+        return new NextResponse("Site not found", { status: 404 });
+      }
+    }
+
+    // Check if another department already has this name in the same site
     const existingDepartment = await prisma.department.findFirst({
       where: {
         name,
+        siteId: departmentSiteId,
         NOT: {
           id: params.id,
         },
@@ -35,9 +59,12 @@ export async function PATCH(
     });
 
     if (existingDepartment) {
-      return new NextResponse("Department with this name already exists", {
-        status: 400,
-      });
+      return new NextResponse(
+        "Department with this name already exists in this site",
+        {
+          status: 400,
+        }
+      );
     }
 
     const department = await prisma.department.update({
@@ -45,6 +72,15 @@ export async function PATCH(
       data: {
         name,
         description,
+        ...(siteId ? { siteId } : {}),
+      },
+      include: {
+        site: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -87,6 +123,18 @@ export async function DELETE(
     if (documentsInDepartment) {
       return new NextResponse(
         "Cannot delete department with associated documents. Please reassign or delete the documents first.",
+        { status: 400 }
+      );
+    }
+
+    // Check if there are any templates in this department
+    const templatesInDepartment = await prisma.template.findFirst({
+      where: { departmentId: params.id },
+    });
+
+    if (templatesInDepartment) {
+      return new NextResponse(
+        "Cannot delete department with associated templates. Please reassign or delete the templates first.",
         { status: 400 }
       );
     }

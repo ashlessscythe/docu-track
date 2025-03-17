@@ -20,12 +20,12 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { role, departmentId, password, name, email } = body;
+    const { role, departmentId, siteId, password, name, email } = body;
 
     // Get the current user to check if role is changing from PENDING
     const currentUser = await prisma.user.findUnique({
       where: { id: params.id },
-      select: { role: true, email: true },
+      select: { role: true, email: true, siteId: true },
     });
 
     if (!currentUser) {
@@ -46,10 +46,45 @@ export async function PATCH(
       }
     }
 
+    // If site is changing, verify the new site exists
+    if (siteId && siteId !== currentUser.siteId) {
+      const site = await prisma.site.findUnique({
+        where: { id: siteId },
+      });
+
+      if (!site) {
+        return new NextResponse("Site not found", { status: 404 });
+      }
+    }
+
+    // If department is changing, verify it belongs to the user's site
+    if (departmentId) {
+      const userSiteId = siteId || currentUser.siteId;
+
+      if (userSiteId) {
+        const department = await prisma.department.findFirst({
+          where: {
+            id: departmentId,
+            siteId: userSiteId,
+          },
+        });
+
+        if (!department) {
+          return new NextResponse(
+            "Department not found in the specified site",
+            {
+              status: 400,
+            }
+          );
+        }
+      }
+    }
+
     // Prepare update data
     const updateData: any = {};
     if (role !== undefined) updateData.role = role;
     if (departmentId !== undefined) updateData.departmentId = departmentId;
+    if (siteId !== undefined) updateData.siteId = siteId;
     if (name !== undefined) updateData.name = name;
     if (email !== undefined) updateData.email = email;
     if (password) {
@@ -65,6 +100,13 @@ export async function PATCH(
         name: true,
         email: true,
         role: true,
+        siteId: true,
+        site: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         department: {
           select: {
             id: true,

@@ -6,10 +6,20 @@ export enum UserRole {
   REPORTER = "REPORTER",
 }
 
+export type Site = {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
 export type Department = {
   id: string;
   name: string;
   description?: string;
+  siteId?: string;
+  site?: Site;
 };
 
 export type User = {
@@ -19,6 +29,8 @@ export type User = {
   role: UserRole;
   department?: Department;
   departmentId?: string;
+  site?: Site;
+  siteId?: string;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -28,6 +40,8 @@ export type DocumentType = {
   name: string;
   description?: string;
   type?: string;
+  siteId?: string;
+  site?: Site;
   [key: string]: any; // For additional optional fields with defaults
 };
 
@@ -39,6 +53,8 @@ export type Document = {
   description: string;
   departmentId?: string;
   department?: Department;
+  siteId?: string;
+  site?: Site;
   status: "PENDING" | "APPROVED" | "REJECTED" | "NEEDS_REVIEW";
   mimeType: string;
   createdAt: Date;
@@ -57,6 +73,8 @@ export type Template = {
   mimeType: string;
   departmentId: string | null;
   typeId: string;
+  siteId?: string;
+  site?: Site;
   createdAt: Date;
   updatedAt: Date;
   department?: Department | null;

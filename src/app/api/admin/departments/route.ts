@@ -5,9 +5,6 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
-// Default site ID (matches the one created in the migration)
-const DEFAULT_SITE_ID = "default-site-id";
-
 // GET /api/admin/departments - Get all departments
 export async function GET() {
   try {
@@ -17,11 +14,29 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Get user's site ID, default to null if not set
+    const siteId = session.user.siteId || null;
+
+    // If no site ID is set, return empty array as user must have a site
+    if (!siteId) {
+      return NextResponse.json([]);
+    }
+
     const departments = await prisma.department.findMany({
+      where: {
+        siteId, // Filter by user's site
+      },
       select: {
         id: true,
         name: true,
         description: true,
+        siteId: true,
+        site: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
@@ -42,16 +57,32 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, description, siteId = DEFAULT_SITE_ID } = body;
+    const { name, description, siteId } = body;
+
+    // Get user's site ID if not provided
+    const departmentSiteId = siteId || session.user.siteId;
+
+    if (!departmentSiteId) {
+      return new NextResponse("Site ID is required", { status: 400 });
+    }
 
     if (!name) {
       return new NextResponse("Department name is required", { status: 400 });
     }
 
+    // Verify the site exists
+    const site = await prisma.site.findUnique({
+      where: { id: departmentSiteId },
+    });
+
+    if (!site) {
+      return new NextResponse("Site not found", { status: 404 });
+    }
+
     const existingDepartment = await prisma.department.findFirst({
       where: {
         name,
-        siteId,
+        siteId: departmentSiteId,
       },
     });
 
@@ -68,7 +99,15 @@ export async function POST(request: Request) {
       data: {
         name,
         description: description || "",
-        siteId,
+        siteId: departmentSiteId,
+      },
+      include: {
+        site: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 

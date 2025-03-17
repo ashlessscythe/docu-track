@@ -33,6 +33,7 @@ export async function GET() {
         email: true,
         role: true,
         siteId: true,
+        site: true,
         department: {
           select: {
             id: true,
