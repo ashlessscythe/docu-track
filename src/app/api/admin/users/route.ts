@@ -15,12 +15,24 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Get user's site ID, default to null if not set
+    const siteId = session.user.siteId || null;
+
+    // If no site ID is set, return empty array as user must have a site
+    if (!siteId) {
+      return NextResponse.json([]);
+    }
+
     const users = await prisma.user.findMany({
+      where: {
+        siteId, // Filter by user's site
+      },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
+        siteId: true,
         department: {
           select: {
             id: true,
@@ -46,6 +58,16 @@ export async function POST(request: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Get user's site ID, default to null if not set
+    const siteId = session.user.siteId;
+
+    // If no site ID is set, return error as user must have a site
+    if (!siteId) {
+      return new NextResponse("User not associated with a site", {
+        status: 400,
+      });
+    }
+
     const body = await request.json();
     const { name, email, password, role, departmentId } = body;
 
@@ -63,6 +85,22 @@ export async function POST(request: Request) {
       });
     }
 
+    // Verify that the department belongs to the user's site if provided
+    if (departmentId) {
+      const department = await prisma.department.findFirst({
+        where: {
+          id: departmentId,
+          siteId,
+        },
+      });
+
+      if (!department) {
+        return new NextResponse("Invalid department for this site", {
+          status: 400,
+        });
+      }
+    }
+
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -73,12 +111,14 @@ export async function POST(request: Request) {
         password: hashedPassword,
         role,
         departmentId: departmentId || null,
+        siteId, // Set the site ID from the admin's session
       },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
+        siteId: true,
         department: {
           select: {
             id: true,

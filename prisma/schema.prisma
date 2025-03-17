@@ -25,6 +25,22 @@ enum DocumentStatus {
   NEEDS_REVIEW
 }
 
+model Site {
+  id          String       @id @default(cuid())
+  name        String       
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  // Relations
+  users       User[]
+  departments Department[]
+  documentTypes DocumentType[]
+  documents   Document[]
+  templates   Template[]
+  feedback    Feedback[]
+}
+
 model User {
   id                String       @id @default(cuid())
   email             String       @unique
@@ -33,6 +49,8 @@ model User {
   role              UserRole
   departmentId      String?      // Foreign key to the Department table
   department        Department?  @relation(fields: [departmentId], references: [id])
+  siteId            String?      // Foreign key to the Site table
+  site              Site?        @relation(fields: [siteId], references: [id])
   resetToken        String?      // Token for password reset
   resetTokenExpiry  DateTime?    // Expiry time for reset token
   createdAt         DateTime     @default(now())
@@ -45,19 +63,27 @@ model User {
 
 model Department {
   id          String       @id @default(cuid())
-  name        String       @unique
+  name        String       
   description String?
+  siteId      String       // Foreign key to the Site table
+  site        Site         @relation(fields: [siteId], references: [id])
   users       User[]       @relation
   documents   Document[]   @relation
   templates   Template[]   // Optional relation to templates
+  
+  @@unique([name, siteId]) // Name must be unique within a site
 }
 
 model DocumentType {
   id          String       @id @default(cuid())
-  name        String       @unique
+  name        String       
   description String?
+  siteId      String       // Foreign key to the Site table
+  site        Site         @relation(fields: [siteId], references: [id])
   documents   Document[]   @relation
   templates   Template[]   // Optional relation to templates
+  
+  @@unique([name, siteId]) // Name must be unique within a site
 }
 
 model Document {
@@ -68,6 +94,8 @@ model Document {
   description   String
   departmentId  String?         // Foreign key to the Department table
   department    Department?     @relation(fields: [departmentId], references: [id])
+  siteId        String          // Foreign key to the Site table
+  site          Site            @relation(fields: [siteId], references: [id])
   status        DocumentStatus  @default(PENDING)
   content       Bytes           // Document content stored as bytes
   mimeType      String          // MIME type of the file
@@ -89,7 +117,9 @@ model Template {
   departmentId  String?        // Optional foreign key to Department table
   department    Department?    @relation(fields: [departmentId], references: [id])
   typeId        String         // Foreign key to DocumentType table
-  type          DocumentType  @relation(fields: [typeId], references: [id])
+  type          DocumentType   @relation(fields: [typeId], references: [id])
+  siteId        String         // Foreign key to the Site table
+  site          Site           @relation(fields: [siteId], references: [id])
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -110,6 +140,8 @@ model Feedback {
   content     String    // The feedback text
   userId      String    // Foreign key to the User table
   user        User      @relation(fields: [userId], references: [id])
+  siteId      String    // Foreign key to the Site table
+  site        Site      @relation(fields: [siteId], references: [id])
   status      FeedbackStatus @default(PENDING)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

@@ -43,6 +43,18 @@ export async function POST(req: Request) {
       );
     }
 
+    // Find or create default site
+    const defaultSite =
+      (await prisma.site.findFirst({
+        where: { name: "default-site" },
+      })) ||
+      (await prisma.site.create({
+        data: {
+          name: "default-site",
+          description: "Default site",
+        },
+      }));
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -54,6 +66,7 @@ export async function POST(req: Request) {
         password: hashedPassword,
         role: UserRole.PENDING,
         departmentId: null,
+        siteId: defaultSite.id, // Assign default site
       },
     });
 
@@ -69,6 +82,7 @@ export async function POST(req: Request) {
     const adminEmails = await prisma.user.findMany({
       where: {
         role: UserRole.ADMIN,
+        siteId: defaultSite.id, // Only notify admins of the same site
       },
       select: {
         email: true,
@@ -91,6 +105,7 @@ export async function POST(req: Request) {
       email: user.email,
       role: user.role,
       departmentId: user.departmentId,
+      siteId: user.siteId,
     };
 
     return NextResponse.json({

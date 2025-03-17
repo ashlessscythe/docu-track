@@ -6,6 +6,9 @@ import type { DocumentType } from "@/types";
 
 export const dynamic = "force-dynamic";
 
+// Default site ID (matches the one created in the migration)
+const DEFAULT_SITE_ID = "default-site-id";
+
 // GET /api/admin/document-types - Get all document types
 export async function GET() {
   try {
@@ -63,7 +66,13 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, description, type = "default", ...otherFields } = body;
+    const {
+      name,
+      description,
+      type = "default",
+      siteId = DEFAULT_SITE_ID,
+      ...otherFields
+    } = body;
 
     if (!name) {
       return new NextResponse("Document type name is required", {
@@ -72,13 +81,19 @@ export async function POST(request: Request) {
     }
 
     const existingType = await prisma.documentType.findFirst({
-      where: { name },
+      where: {
+        name,
+        siteId,
+      },
     });
 
     if (existingType) {
-      return new NextResponse("Document type with this name already exists", {
-        status: 400,
-      });
+      return new NextResponse(
+        "Document type with this name already exists in this site",
+        {
+          status: 400,
+        }
+      );
     }
 
     // Store type and other fields in description as JSON
@@ -92,6 +107,7 @@ export async function POST(request: Request) {
       data: {
         name,
         description: JSON.stringify(descriptionData),
+        siteId,
       },
     });
 

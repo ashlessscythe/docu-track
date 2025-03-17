@@ -13,10 +13,17 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Get user's site ID, default to null if not set
+    const siteId = session.user.siteId || null;
+
+    // If no site ID is set, return empty array as user must have a site
+    if (!siteId) {
+      return NextResponse.json([]);
+    }
+
     const departments = await prisma.department.findMany({
-      select: {
-        id: true,
-        name: true,
+      where: {
+        siteId, // Filter by user's site
       },
       orderBy: {
         name: "asc",
@@ -26,6 +33,60 @@ export async function GET() {
     return NextResponse.json(departments);
   } catch (error) {
     console.error("[DEPARTMENTS_GET]", error);
+    return new NextResponse("Internal error", { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user || session.user.role !== "ADMIN") {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // Get user's site ID, default to null if not set
+    const siteId = session.user.siteId;
+
+    // If no site ID is set, return error as user must have a site
+    if (!siteId) {
+      return new NextResponse("User not associated with a site", {
+        status: 400,
+      });
+    }
+
+    const body = await req.json();
+    const { name, description } = body;
+
+    if (!name) {
+      return new NextResponse("Name is required", { status: 400 });
+    }
+
+    // Check if department with same name already exists in this site
+    const existingDepartment = await prisma.department.findFirst({
+      where: {
+        name,
+        siteId,
+      },
+    });
+
+    if (existingDepartment) {
+      return new NextResponse("Department with this name already exists", {
+        status: 400,
+      });
+    }
+
+    const department = await prisma.department.create({
+      data: {
+        name,
+        description,
+        siteId, // Set the site ID from the user's session
+      },
+    });
+
+    return NextResponse.json(department);
+  } catch (error) {
+    console.error("[DEPARTMENTS_POST]", error);
     return new NextResponse("Internal error", { status: 500 });
   }
 }

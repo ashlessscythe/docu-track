@@ -18,6 +18,7 @@ interface ExtendedSession extends Session {
     name?: string | null;
     role: UserRole;
     departmentId?: string | null;
+    siteId?: string | null;
   };
   error?: "RefetchUser";
 }
@@ -27,6 +28,7 @@ interface ExtendedJWT extends JWT {
   id: string;
   role: UserRole;
   departmentId?: string | null;
+  siteId?: string | null;
   updatedAt: number;
   error?: "RefetchUser";
   version?: number;
@@ -37,6 +39,7 @@ interface ExtendedUser extends NextAuthUser {
   id: string;
   role: UserRole;
   departmentId?: string | null;
+  siteId?: string | null;
   updatedAt: number;
 }
 
@@ -85,13 +88,36 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid password");
         }
 
+        // Set default site if not set
+        let userWithSite = user;
+        if (!user.siteId) {
+          // Find or create default site
+          const defaultSite =
+            (await prisma.site.findFirst({
+              where: { name: "default-site" },
+            })) ||
+            (await prisma.site.create({
+              data: {
+                name: "default-site",
+                description: "Default site",
+              },
+            }));
+
+          // Update user with default site
+          userWithSite = await prisma.user.update({
+            where: { id: user.id },
+            data: { siteId: defaultSite.id },
+          });
+        }
+
         return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          departmentId: user.departmentId,
-          updatedAt: user.updatedAt.getTime(),
+          id: userWithSite.id,
+          email: userWithSite.email,
+          name: userWithSite.name,
+          role: userWithSite.role,
+          departmentId: userWithSite.departmentId,
+          siteId: userWithSite.siteId,
+          updatedAt: userWithSite.updatedAt.getTime(),
         };
       },
     }),
@@ -113,6 +139,7 @@ export const authOptions: NextAuthOptions = {
           ...token,
           role: latestUser.role,
           departmentId: latestUser.departmentId,
+          siteId: latestUser.siteId,
           updatedAt: latestUser.updatedAt.getTime(),
         } as JWT;
       }
@@ -123,6 +150,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           role: (user as ExtendedUser).role,
           departmentId: (user as ExtendedUser).departmentId,
+          siteId: (user as ExtendedUser).siteId,
           updatedAt: (user as ExtendedUser).updatedAt,
           version: JWT_VERSION,
         } as JWT;
@@ -160,6 +188,7 @@ export const authOptions: NextAuthOptions = {
           id: token.id,
           role: (token as ExtendedJWT).role,
           departmentId: (token as ExtendedJWT).departmentId,
+          siteId: (token as ExtendedJWT).siteId,
         },
       } as ExtendedSession;
     },

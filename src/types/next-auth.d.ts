@@ -9,6 +9,7 @@ declare module "next-auth" {
       email?: string | null;
       role: UserRole;
       departmentId?: string | null;
+      siteId?: string | null;
     };
   }
 
@@ -18,6 +19,7 @@ declare module "next-auth" {
     email: string;
     role: UserRole;
     departmentId?: string | null;
+    siteId?: string | null;
   }
 }
 
@@ -26,5 +28,6 @@ declare module "next-auth/jwt" {
     id: string;
     role: UserRole;
     departmentId?: string | null;
+    siteId?: string | null;
   }
 }

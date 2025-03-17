@@ -5,6 +5,9 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+// Default site ID (matches the one created in the migration)
+const DEFAULT_SITE_ID = "default-site-id";
+
 // GET /api/admin/departments - Get all departments
 export async function GET() {
   try {
@@ -39,26 +42,33 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, description } = body;
+    const { name, description, siteId = DEFAULT_SITE_ID } = body;
 
     if (!name) {
       return new NextResponse("Department name is required", { status: 400 });
     }
 
     const existingDepartment = await prisma.department.findFirst({
-      where: { name },
+      where: {
+        name,
+        siteId,
+      },
     });
 
     if (existingDepartment) {
-      return new NextResponse("Department with this name already exists", {
-        status: 400,
-      });
+      return new NextResponse(
+        "Department with this name already exists in this site",
+        {
+          status: 400,
+        }
+      );
     }
 
     const department = await prisma.department.create({
       data: {
         name,
         description: description || "",
+        siteId,
       },
     });
 

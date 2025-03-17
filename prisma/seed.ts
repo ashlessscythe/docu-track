@@ -75,21 +75,56 @@ const hashPassword = async (password: string): Promise<string> => {
   return await bcrypt.hash(password, 10);
 };
 
+// Default site ID (matches the one created in the migration)
+const DEFAULT_SITE_ID = "default-site-id";
+
 // Default departments
 const defaultDepartments = [
-  { name: "IT", description: "Information Technology Department" },
-  { name: "HR", description: "Human Resources Department" },
-  { name: "Engineering", description: "Engineering Department" },
-  { name: "Finance", description: "Finance Department" },
-  { name: "Marketing", description: "Marketing Department" },
+  {
+    name: "IT",
+    description: "Information Technology Department",
+    siteId: DEFAULT_SITE_ID,
+  },
+  {
+    name: "HR",
+    description: "Human Resources Department",
+    siteId: DEFAULT_SITE_ID,
+  },
+  {
+    name: "Engineering",
+    description: "Engineering Department",
+    siteId: DEFAULT_SITE_ID,
+  },
+  {
+    name: "Finance",
+    description: "Finance Department",
+    siteId: DEFAULT_SITE_ID,
+  },
+  {
+    name: "Marketing",
+    description: "Marketing Department",
+    siteId: DEFAULT_SITE_ID,
+  },
 ];
 
 // Default document types
 const defaultDocumentTypes = [
-  { name: "PDF", description: "Portable Document Format" },
-  { name: "DOCX", description: "Microsoft Word Document" },
-  { name: "TXT", description: "Plain Text Document" },
-  { name: "XLS", description: "Microsoft Excel Spreadsheet" },
+  {
+    name: "PDF",
+    description: "Portable Document Format",
+    siteId: DEFAULT_SITE_ID,
+  },
+  {
+    name: "DOCX",
+    description: "Microsoft Word Document",
+    siteId: DEFAULT_SITE_ID,
+  },
+  { name: "TXT", description: "Plain Text Document", siteId: DEFAULT_SITE_ID },
+  {
+    name: "XLS",
+    description: "Microsoft Excel Spreadsheet",
+    siteId: DEFAULT_SITE_ID,
+  },
 ];
 
 // Default templates
@@ -101,6 +136,7 @@ const defaultTemplates = [
     mimeType:
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     departmentId: null, // Global template
+    siteId: DEFAULT_SITE_ID,
   },
   {
     name: "Expense Report.xlsx",
@@ -109,6 +145,7 @@ const defaultTemplates = [
     mimeType:
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     departmentId: null, // Global template
+    siteId: DEFAULT_SITE_ID,
   },
   {
     name: "IT Request Form.pdf",
@@ -116,6 +153,7 @@ const defaultTemplates = [
     content: Buffer.from("IT Request Form Template Content"),
     mimeType: "application/pdf",
     departmentId: null, // Will be set to IT department
+    siteId: DEFAULT_SITE_ID,
   },
   {
     name: "HR Onboarding Checklist.docx",
@@ -124,11 +162,15 @@ const defaultTemplates = [
     mimeType:
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     departmentId: null, // Will be set to HR department
+    siteId: DEFAULT_SITE_ID,
   },
 ];
 
 // Generate fake user data
-const createFakeUser = async (departmentIds: string[]) => {
+const createFakeUser = async (
+  departmentIds: string[],
+  siteId: string = DEFAULT_SITE_ID
+) => {
   const role = getRandomRole();
   const password = `${role.toLowerCase()}pass`;
   const firstName = faker.person.firstName();
@@ -142,6 +184,7 @@ const createFakeUser = async (departmentIds: string[]) => {
       role === UserRole.PENDING || departmentIds.length === 0
         ? null
         : faker.helpers.arrayElement(departmentIds),
+    siteId,
   };
 };
 
@@ -149,7 +192,8 @@ const createFakeUser = async (departmentIds: string[]) => {
 const createFakeDocument = (
   userId: string,
   departmentIds: string[],
-  documentTypeIds: string[]
+  documentTypeIds: string[],
+  siteId: string = DEFAULT_SITE_ID
 ) => {
   // Generate random content as Bytes
   const content = Buffer.from(faker.lorem.paragraphs());
@@ -184,13 +228,15 @@ const createFakeDocument = (
     content,
     mimeType: fileType.mime,
     submitterId: userId,
+    siteId,
   };
 };
 
 // Generate fake template data
 const createFakeTemplate = (
   departmentIds: string[],
-  documentTypeIds: string[]
+  documentTypeIds: string[],
+  siteId: string = DEFAULT_SITE_ID
 ) => {
   const fileTypes = [
     { ext: "pdf", mime: "application/pdf" },
@@ -221,6 +267,7 @@ const createFakeTemplate = (
         ? faker.helpers.arrayElement(departmentIds)
         : null,
     typeId: faker.helpers.arrayElement(documentTypeIds),
+    siteId,
   };
 };
 
@@ -231,30 +278,35 @@ const defaultUsers = [
     name: "Bob",
     role: UserRole.ADMIN,
     password: "adminpass",
+    siteId: DEFAULT_SITE_ID,
   },
   {
     email: "approver@example.com",
     name: "Approver User",
     role: UserRole.APPROVER,
     password: "approverpass",
+    siteId: DEFAULT_SITE_ID,
   },
   {
     email: "submitter@example.com",
     name: "Submitter User",
     role: UserRole.SUBMITTER,
     password: "submitterpass",
+    siteId: DEFAULT_SITE_ID,
   },
   {
     email: "pending@example.com",
     name: "Pending User",
     role: UserRole.PENDING,
     password: "pendingpass",
+    siteId: DEFAULT_SITE_ID,
   },
   {
     email: "reporter@example.com",
     name: "Reporter User",
     role: UserRole.REPORTER,
     password: "reporterpass",
+    siteId: DEFAULT_SITE_ID,
   },
 ];
 
@@ -275,6 +327,22 @@ async function main() {
   const isDbEmpty =
     userCount === 0 && departmentCount === 0 && documentTypeCount === 0;
 
+  // Check if site exists, create if not
+  let defaultSite = await prisma.site.findFirst({
+    where: { id: DEFAULT_SITE_ID },
+  });
+
+  if (!defaultSite) {
+    console.log("Creating default site...");
+    defaultSite = await prisma.site.create({
+      data: {
+        id: DEFAULT_SITE_ID,
+        name: "Default Site",
+        description: "Default site for the application",
+      },
+    });
+  }
+
   // Handle clear operation with destructive flag check
   if (args.clear) {
     if (!args.destructive) {
@@ -291,6 +359,8 @@ async function main() {
     await prisma.user.deleteMany();
     await prisma.department.deleteMany();
     await prisma.documentType.deleteMany();
+    await prisma.feedback.deleteMany();
+    // Don't delete the site as we'll need it
   } else if (!isDbEmpty) {
     console.log("Database already contains data. Running in idempotent mode.");
     console.log("To clear existing data, use --clear --destructive flags.");
@@ -515,6 +585,7 @@ async function main() {
               mimeType: "application/pdf",
               submitterId: users[0].id, // Assign to first created user
               approverId: bob.id, // Assign to admin user
+              siteId: DEFAULT_SITE_ID,
             },
           }),
           prisma.document.create({
@@ -534,6 +605,7 @@ async function main() {
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
               submitterId: users[0].id, // Assign to first created user
               approverId: bob.id, // Assign to admin user
+              siteId: DEFAULT_SITE_ID,
             },
           }),
         ]);

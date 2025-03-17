@@ -5,6 +5,9 @@ import { authOptions } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
+// Default site ID (matches the one created in the migration)
+const DEFAULT_SITE_ID = "default-site-id";
+
 // GET /api/admin/templates - List all templates
 export async function GET() {
   try {
@@ -48,6 +51,7 @@ export async function POST(request: Request) {
     const description = formData.get("description") as string;
     const departmentId = formData.get("departmentId") as string | null;
     const typeId = formData.get("typeId") as string;
+    const siteId = (formData.get("siteId") as string) || DEFAULT_SITE_ID;
 
     if (!file || !description || !typeId) {
       return NextResponse.json(
@@ -73,6 +77,7 @@ export async function POST(request: Request) {
         mimeType: file.type,
         departmentId: departmentId || null, // Keep null if not provided or empty
         typeId,
+        siteId,
       },
       include: {
         department: true,

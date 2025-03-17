@@ -4,6 +4,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { Template } from "@/types";
 
+// Default site ID (matches the one created in the migration)
+const DEFAULT_SITE_ID = "default-site-id";
+
 // GET /api/admin/templates/[id] - Get a specific template
 export async function GET(
   request: Request,
@@ -82,6 +85,7 @@ export async function PUT(
     const description = formData.get("description") as string;
     const departmentId = formData.get("departmentId") as string;
     const typeId = formData.get("typeId") as string;
+    const siteId = (formData.get("siteId") as string) || DEFAULT_SITE_ID;
 
     if (!name || !description || !typeId) {
       return NextResponse.json(
@@ -95,20 +99,27 @@ export async function PUT(
       description,
       departmentId: departmentId || null,
       typeId,
+      siteId,
       ...(file && {
         content: Buffer.from(await file.arrayBuffer()),
         mimeType: file.type,
       }),
     };
 
-    const template = (await prisma.template.update({
+    const templateData = await prisma.template.update({
       where: { id: params.id },
       data: updateData,
       include: {
         department: true,
         type: true,
       },
-    })) as Template;
+    });
+
+    // Convert Uint8Array to Buffer for type compatibility
+    const template = {
+      ...templateData,
+      content: Buffer.from(templateData.content),
+    } as Template;
 
     // Don't send the file content in the response
     const { content, ...templateWithoutContent } = template;
