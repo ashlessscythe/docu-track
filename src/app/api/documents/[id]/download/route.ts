@@ -22,6 +22,7 @@ export async function GET(
       select: {
         submitterId: true,
         departmentId: true,
+        siteId: true,
       },
     });
 
@@ -30,6 +31,9 @@ export async function GET(
     }
 
     // Check if user has access to this document
+    // Admin has access to all documents
+    // Document submitter has access to their own documents
+    // Approvers have access only to documents from their department
     const hasAccess =
       session.user.role === "ADMIN" ||
       document.submitterId === session.user.id ||
@@ -37,7 +41,10 @@ export async function GET(
         document.departmentId === session.user.departmentId);
 
     if (!hasAccess) {
-      return new NextResponse("Forbidden", { status: 403 });
+      return new NextResponse(
+        "Forbidden - You don't have access to this document",
+        { status: 403 }
+      );
     }
 
     // If user has access, get the document content

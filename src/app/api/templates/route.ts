@@ -27,7 +27,7 @@ export async function GET() {
     const templates = await prisma.template.findMany({
       where: {
         siteId, // Filter by user's site
-        ...(session.user.role === "ADMIN"
+        ...(["ADMIN", "SUBMITTER", "APPROVER"].includes(session.user.role)
           ? {}
           : session.user.departmentId
             ? {

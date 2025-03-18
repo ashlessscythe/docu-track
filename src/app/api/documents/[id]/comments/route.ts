@@ -3,6 +3,45 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 
+// Helper function to check if user has access to the document
+async function checkDocumentAccess(documentId: string, session: any) {
+  // Get the document with minimal information
+  const document = await prisma.document.findUnique({
+    where: {
+      id: documentId,
+    },
+    select: {
+      submitterId: true,
+      departmentId: true,
+    },
+  });
+
+  if (!document) {
+    return false;
+  }
+
+  // Admin has access to all documents
+  if (session.user.role === "ADMIN") {
+    return true;
+  }
+
+  // Document submitter has access to their own documents
+  if (document.submitterId === session.user.id) {
+    return true;
+  }
+
+  // Approvers have access only to documents from their department
+  if (
+    session.user.role === "APPROVER" &&
+    document.departmentId === session.user.departmentId
+  ) {
+    return true;
+  }
+
+  // Default: no access
+  return false;
+}
+
 // GET /api/documents/[id]/comments
 export async function GET(
   request: NextRequest,
@@ -12,6 +51,15 @@ export async function GET(
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // Check if user has access to the document
+    const hasAccess = await checkDocumentAccess(params.id, session);
+    if (!hasAccess) {
+      return new NextResponse(
+        "Forbidden - You don't have access to this document",
+        { status: 403 }
+      );
     }
 
     const comments = await prisma.comment.findMany({
@@ -47,6 +95,15 @@ export async function POST(
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // Check if user has access to the document
+    const hasAccess = await checkDocumentAccess(params.id, session);
+    if (!hasAccess) {
+      return new NextResponse(
+        "Forbidden - You don't have access to this document",
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
