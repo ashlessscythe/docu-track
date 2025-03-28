@@ -20,6 +20,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Department, DocumentStatus, DocumentType } from "@prisma/client";
 import { useState } from "react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 
 type DocumentWithRelations = {
   id: string;
@@ -168,7 +175,8 @@ export function DocumentsTable({
         </Button>
       </div>
 
-      <div className="rounded-md border">
+      {/* Desktop Table View */}
+      <div className="rounded-md border hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -256,6 +264,74 @@ export function DocumentsTable({
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="grid grid-cols-1 gap-4 md:hidden">
+        {documents.map((doc) => (
+          <Card key={doc.id} className="overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">{doc.name}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between">
+                <div className="text-sm text-muted-foreground">Type</div>
+                <div className="text-sm font-medium">{doc.type.name}</div>
+              </div>
+              <div className="flex justify-between">
+                <div className="text-sm text-muted-foreground">Department</div>
+                <div className="text-sm font-medium">
+                  {doc.department?.name || "N/A"}
+                </div>
+              </div>
+              <div className="flex justify-between">
+                <div className="text-sm text-muted-foreground">Status</div>
+                <div className="text-sm">
+                  <span className={getStatusColor(doc.status)}>
+                    {doc.status}
+                  </span>
+                </div>
+              </div>
+              <div className="flex justify-between">
+                <div className="text-sm text-muted-foreground">Submitter</div>
+                <div className="text-sm font-medium text-right">
+                  <div>{doc.submitter.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {doc.submitter.email}
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-between">
+                <div className="text-sm text-muted-foreground">Approver</div>
+                <div className="text-sm font-medium text-right">
+                  {doc.approver ? (
+                    <>
+                      <div>{doc.approver.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {doc.approver.email}
+                      </div>
+                    </>
+                  ) : (
+                    "Not assigned"
+                  )}
+                </div>
+              </div>
+              <div className="flex justify-between">
+                <div className="text-sm text-muted-foreground">Submitted</div>
+                <div className="text-sm font-medium">
+                  {formatDistanceToNow(new Date(doc.createdAt), {
+                    addSuffix: true,
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        {documents.length === 0 && (
+          <div className="text-center p-8 border rounded-lg bg-muted/10 text-muted-foreground">
+            No documents match your filters
+          </div>
+        )}
       </div>
     </div>
   );

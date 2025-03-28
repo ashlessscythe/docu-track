@@ -20,6 +20,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import type { Site } from "@/types";
 
 export default function SitesManagement() {
@@ -161,40 +168,86 @@ export default function SitesManagement() {
         </Dialog>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sites.map((site) => (
-            <TableRow key={site.id}>
-              <TableCell>{site.name}</TableCell>
-              <TableCell>{site.description || "N/A"}</TableCell>
-              <TableCell className="space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setEditingSite(site);
-                    setIsEditSiteOpen(true);
-                  }}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => handleDeleteSite(site.id)}
-                >
-                  Delete
-                </Button>
-              </TableCell>
+      {/* Desktop Table View */}
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {sites.map((site) => (
+              <TableRow key={site.id}>
+                <TableCell>{site.name}</TableCell>
+                <TableCell>{site.description || "N/A"}</TableCell>
+                <TableCell className="space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEditingSite(site);
+                      setIsEditSiteOpen(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleDeleteSite(site.id)}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="grid grid-cols-1 gap-4 md:hidden">
+        {sites.map((site) => (
+          <Card key={site.id} className="overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">{site.name}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <div className="text-sm text-muted-foreground mb-1">
+                  Description
+                </div>
+                <div className="text-sm">{site.description || "N/A"}</div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setEditingSite(site);
+                  setIsEditSiteOpen(true);
+                }}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={() => handleDeleteSite(site.id)}
+              >
+                Delete
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+        {sites.length === 0 && (
+          <div className="text-center p-8 border rounded-lg bg-muted/10 text-muted-foreground">
+            No sites available
+          </div>
+        )}
+      </div>
 
       {/* Edit Site Dialog */}
       <Dialog open={isEditSiteOpen} onOpenChange={setIsEditSiteOpen}>
