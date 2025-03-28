@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { FeedbackStatus } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -18,29 +19,72 @@ export async function GET() {
 
     // If no site ID is set, return empty array as user must have a site
     if (!siteId) {
-      return NextResponse.json([]);
+      return NextResponse.json({
+        feedback: [],
+        pagination: {
+          total: 0,
+          page: 1,
+          limit: 10,
+          pages: 0,
+        },
+      });
     }
 
-    // Only admins can see all feedback, others can only see their own
+    // Parse query parameters
+    const url = new URL(req.url);
+    const page = parseInt(url.searchParams.get("page") || "1", 10);
+    const limit = parseInt(url.searchParams.get("limit") || "10", 10);
+    const statusFilter = url.searchParams.get(
+      "status"
+    ) as FeedbackStatus | null;
+
+    // Validate pagination parameters
+    const validPage = page > 0 ? page : 1;
+    const validLimit = limit > 0 && limit <= 100 ? limit : 10;
+    const skip = (validPage - 1) * validLimit;
+
+    // Build where clause
+    const where = {
+      siteId, // Filter by user's site
+      ...(session.user.role === "ADMIN" ? {} : { userId: session.user.id }), // Only admins can see all feedback
+      ...(statusFilter ? { status: statusFilter } : {}), // Filter by status if provided
+    };
+
+    // Get total count for pagination
+    const total = await prisma.feedback.count({ where });
+
+    // Calculate total pages
+    const pages = Math.ceil(total / validLimit);
+
+    // Get feedback with pagination
     const feedback = await prisma.feedback.findMany({
-      where: {
-        siteId, // Filter by user's site
-        ...(session.user.role === "ADMIN" ? {} : { userId: session.user.id }),
-      },
+      where,
       include: {
         user: {
           select: {
+            id: true,
             name: true,
             email: true,
+            role: true,
           },
         },
       },
       orderBy: {
         createdAt: "desc",
       },
+      skip,
+      take: validLimit,
     });
 
-    return NextResponse.json(feedback);
+    return NextResponse.json({
+      feedback,
+      pagination: {
+        total,
+        page: validPage,
+        limit: validLimit,
+        pages,
+      },
+    });
   } catch (error) {
     console.error("[FEEDBACK_GET]", error);
     return new NextResponse("Internal error", { status: 500 });

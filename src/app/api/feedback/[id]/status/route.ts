@@ -1,70 +1,80 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions, sessionHasError } from "@/lib/auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { FeedbackStatus } from "@prisma/client";
 
-// PATCH /api/feedback/[id]/status - Update feedback status
 export async function PATCH(
-  req: NextRequest,
+  req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
 
-    // Check if user is authenticated and is an admin
-    if (!session || (await sessionHasError(session))) {
-      return NextResponse.json(
-        { error: "You must be signed in to update feedback" },
-        { status: 401 }
-      );
+    if (!session || !session.user) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Only admins can update feedback status
     if (session.user.role !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Only administrators can update feedback status" },
-        { status: 403 }
-      );
+      return new NextResponse("Forbidden", { status: 403 });
     }
 
-    const { id } = params;
-    const { status } = await req.json();
+    const feedbackId = params.id;
+    if (!feedbackId) {
+      return new NextResponse("Feedback ID is required", { status: 400 });
+    }
 
-    // Validate status
+    const body = await req.json();
+    const { status } = body;
+
     if (!status || !Object.values(FeedbackStatus).includes(status)) {
-      return NextResponse.json(
-        { error: "Invalid status value" },
-        { status: 400 }
-      );
+      return new NextResponse("Valid status is required", { status: 400 });
     }
 
-    // Check if feedback exists
-    const existingFeedback = await prisma.feedback.findUnique({
-      where: { id },
+    // Get user's site ID
+    const siteId = session.user.siteId;
+    if (!siteId) {
+      return new NextResponse("User not associated with a site", {
+        status: 400,
+      });
+    }
+
+    // Check if feedback exists and belongs to the user's site
+    const existingFeedback = await prisma.feedback.findFirst({
+      where: {
+        id: feedbackId,
+        siteId,
+      },
     });
 
     if (!existingFeedback) {
-      return NextResponse.json(
-        { error: "Feedback not found" },
-        { status: 404 }
-      );
+      return new NextResponse("Feedback not found", { status: 404 });
     }
 
     // Update feedback status
     const updatedFeedback = await prisma.feedback.update({
-      where: { id },
-      data: { status },
+      where: {
+        id: feedbackId,
+      },
+      data: {
+        status: status as FeedbackStatus,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
     });
 
-    return NextResponse.json({
-      message: "Feedback status updated successfully",
-      feedback: updatedFeedback,
-    });
+    return NextResponse.json(updatedFeedback);
   } catch (error) {
-    console.error("Error updating feedback status:", error);
-    return NextResponse.json(
-      { error: "Failed to update feedback status" },
-      { status: 500 }
-    );
+    console.error("[FEEDBACK_STATUS_UPDATE]", error);
+    return new NextResponse("Internal error", { status: 500 });
   }
 }

@@ -1,4 +1,9 @@
-import { PrismaClient, UserRole, DocumentStatus } from "@prisma/client";
+import {
+  PrismaClient,
+  UserRole,
+  DocumentStatus,
+  FeedbackStatus,
+} from "@prisma/client";
 import { faker } from "@faker-js/faker";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
@@ -66,6 +71,16 @@ const getRandomStatus = (): DocumentStatus => {
     DocumentStatus.APPROVED,
     DocumentStatus.REJECTED,
     DocumentStatus.NEEDS_REVIEW,
+  ];
+  return faker.helpers.arrayElement(statuses);
+};
+
+// Generate a random feedback status
+const getRandomFeedbackStatus = (): FeedbackStatus => {
+  const statuses = [
+    FeedbackStatus.PENDING,
+    FeedbackStatus.REVIEWED,
+    FeedbackStatus.RESOLVED,
   ];
   return faker.helpers.arrayElement(statuses);
 };
@@ -542,6 +557,26 @@ async function main() {
             return await prisma.template.create({ data: templateData });
           })
         );
+
+        // Create feedback entries
+        console.log("Creating feedback entries...");
+        await Promise.all(
+          allUsers.flatMap((user) =>
+            Array.from(
+              { length: Math.floor(Math.random() * 3) + 1 }, // 1-3 feedback entries per user
+              async () => {
+                return await prisma.feedback.create({
+                  data: {
+                    content: faker.lorem.paragraph(),
+                    userId: user.id,
+                    siteId: DEFAULT_SITE_ID,
+                    status: getRandomFeedbackStatus(),
+                  },
+                });
+              }
+            )
+          )
+        );
       } else {
         console.log("Database already has sufficient fake data");
       }
@@ -606,6 +641,36 @@ async function main() {
               submitterId: users[0].id, // Assign to first created user
               approverId: bob.id, // Assign to admin user
               siteId: DEFAULT_SITE_ID,
+            },
+          }),
+        ]);
+
+        // Create some default feedback entries
+        console.log("Creating default feedback entries...");
+        await Promise.all([
+          prisma.feedback.create({
+            data: {
+              content:
+                "This application is very helpful for document management!",
+              userId: users[0].id,
+              siteId: DEFAULT_SITE_ID,
+              status: FeedbackStatus.PENDING,
+            },
+          }),
+          prisma.feedback.create({
+            data: {
+              content: "Would be nice to have a dark mode option.",
+              userId: users[1].id,
+              siteId: DEFAULT_SITE_ID,
+              status: FeedbackStatus.REVIEWED,
+            },
+          }),
+          prisma.feedback.create({
+            data: {
+              content: "The approval process is very streamlined, great job!",
+              userId: users[2].id,
+              siteId: DEFAULT_SITE_ID,
+              status: FeedbackStatus.RESOLVED,
             },
           }),
         ]);
