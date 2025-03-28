@@ -58,7 +58,9 @@ export default function FeedbackManagement() {
     async (page = 1, status: string | null = null) => {
       setLoading(true);
       try {
-        let url = `/api/feedback?page=${page}&limit=${pagination.limit}`;
+        // Ensure pagination.limit is valid
+        const limit = pagination?.limit || 10;
+        let url = `/api/feedback?page=${page}&limit=${limit}`;
         if (status) {
           url += `&status=${status}`;
         }
@@ -69,24 +71,35 @@ export default function FeedbackManagement() {
         }
 
         const data = await response.json();
-        setFeedback(data.feedback);
-        setPagination(data.pagination);
+        // Ensure data.feedback is an array
+        setFeedback(Array.isArray(data.feedback) ? data.feedback : []);
+        // Ensure pagination data is valid
+        setPagination({
+          total: data.pagination?.total || 0,
+          page: data.pagination?.page || 1,
+          limit: data.pagination?.limit || 10,
+          pages: data.pagination?.pages || 0,
+        });
       } catch (error) {
         toast({
           title: "Error",
           description: "Failed to load feedback. Please try again.",
           variant: "destructive",
         });
+        // Reset to empty state on error
+        setFeedback([]);
       } finally {
         setLoading(false);
       }
     },
-    [pagination.limit, toast]
+    [pagination?.limit, toast]
   );
 
   useEffect(() => {
-    fetchFeedback(pagination.page, statusFilter);
-  }, [pagination.page, statusFilter, fetchFeedback]);
+    // Ensure page is valid
+    const page = pagination?.page || 1;
+    fetchFeedback(page, statusFilter);
+  }, [pagination?.page, statusFilter, fetchFeedback]);
 
   const handleStatusChange = async (
     feedbackId: string,
@@ -105,12 +118,13 @@ export default function FeedbackManagement() {
         throw new Error("Failed to update feedback status");
       }
 
-      // Update local state
-      setFeedback((prev) =>
-        prev.map((item) =>
+      // Update local state - ensure feedback is not null before mapping
+      setFeedback((prev) => {
+        if (!prev) return [];
+        return prev.map((item) =>
           item.id === feedbackId ? { ...item, status: newStatus } : item
-        )
-      );
+        );
+      });
 
       toast({
         title: "Success",
@@ -126,8 +140,13 @@ export default function FeedbackManagement() {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+    } catch (error) {
+      return "Invalid date";
+    }
   };
 
   return (
@@ -157,7 +176,7 @@ export default function FeedbackManagement() {
 
       {loading ? (
         <div className="p-8 text-center">Loading feedback...</div>
-      ) : feedback.length === 0 ? (
+      ) : !feedback || feedback.length === 0 ? (
         <div className="p-8 text-center">No feedback found</div>
       ) : (
         <>
@@ -179,15 +198,17 @@ export default function FeedbackManagement() {
                     <TableRow key={item.id}>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{item.user.name}</div>
+                          <div className="font-medium">
+                            {item.user?.name || "Unknown"}
+                          </div>
                           <div className="text-sm text-muted-foreground">
-                            {item.user.email}
+                            {item.user?.email || "No email"}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell className="max-w-md">
                         <div className="whitespace-normal break-words">
-                          {item.content}
+                          {item.content || "No content"}
                         </div>
                       </TableCell>
                       <TableCell>{formatDate(item.createdAt)}</TableCell>
@@ -201,7 +222,7 @@ export default function FeedbackManagement() {
                                 : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                           }`}
                         >
-                          {item.status}
+                          {item.status || "UNKNOWN"}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -235,9 +256,11 @@ export default function FeedbackManagement() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-medium">{item.user.name}</h3>
+                      <h3 className="font-medium">
+                        {item.user?.name || "Unknown"}
+                      </h3>
                       <p className="text-sm text-muted-foreground">
-                        {item.user.email}
+                        {item.user?.email || "No email"}
                       </p>
                     </div>
                     <span
@@ -249,13 +272,13 @@ export default function FeedbackManagement() {
                             : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                       }`}
                     >
-                      {item.status}
+                      {item.status || "UNKNOWN"}
                     </span>
                   </div>
 
                   <div className="border-t border-b py-3 my-2">
                     <p className="whitespace-normal break-words">
-                      {item.content}
+                      {item.content || "No content"}
                     </p>
                   </div>
 
@@ -286,8 +309,8 @@ export default function FeedbackManagement() {
         </>
       )}
 
-      {/* Pagination */}
-      {pagination.pages > 1 && (
+      {/* Pagination - only show if we have pages and not loading */}
+      {!loading && pagination && pagination.pages > 1 && (
         <div className="flex justify-center mt-6">
           <div className="flex space-x-2">
             <Button
@@ -298,7 +321,7 @@ export default function FeedbackManagement() {
                   page: Math.max(1, prev.page - 1),
                 }))
               }
-              disabled={pagination.page === 1}
+              disabled={!pagination || pagination.page <= 1}
             >
               Previous
             </Button>
@@ -313,7 +336,7 @@ export default function FeedbackManagement() {
                   page: Math.min(prev.pages, prev.page + 1),
                 }))
               }
-              disabled={pagination.page === pagination.pages}
+              disabled={!pagination || pagination.page >= pagination.pages}
             >
               Next
             </Button>
