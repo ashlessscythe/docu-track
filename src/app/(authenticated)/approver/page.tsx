@@ -12,14 +12,29 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ViewDocumentDialog } from "@/components/ViewDocumentDialog";
 import { DocumentWithRelations, DocumentStatus } from "@/types/documents";
+import { ArrowUpDown, Search, X } from "lucide-react";
 
 type ViewDocumentType = {
   id: string;
@@ -29,6 +44,18 @@ type ViewDocumentType = {
   department: DocumentWithRelations["department"];
   status: string;
   createdAt: string;
+};
+
+type SortConfig = {
+  key: keyof DocumentWithRelations | null;
+  direction: "asc" | "desc";
+};
+
+type DocumentType = {
+  id: string;
+  name: string;
+  description: string | null;
+  siteId: string | null;
 };
 
 function DocumentsTableSkeleton() {
@@ -83,6 +110,10 @@ export default function ApproverPage() {
   });
 
   const [documents, setDocuments] = useState<DocumentWithRelations[]>([]);
+  const [filteredDocuments, setFilteredDocuments] = useState<
+    DocumentWithRelations[]
+  >([]);
+  const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<ViewDocumentType | null>(null);
   const [actionDoc, setActionDoc] = useState<DocumentWithRelations | null>(
     null
@@ -92,6 +123,15 @@ export default function ApproverPage() {
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [departmentName, setDepartmentName] = useState<string>("");
+
+  // Sorting and filtering states
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    key: null,
+    direction: "desc",
+  });
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [typeFilter, setTypeFilter] = useState<string>("ALL");
+  const [searchText, setSearchText] = useState<string>("");
 
   const fetchDepartmentName = useCallback(async () => {
     if (!session?.user.departmentId) return;
@@ -108,6 +148,17 @@ export default function ApproverPage() {
     }
   }, [session?.user.departmentId]);
 
+  const fetchDocumentTypes = async () => {
+    try {
+      const response = await fetch("/api/document-types");
+      if (!response.ok) throw new Error("Failed to fetch document types");
+      const data = await response.json();
+      setDocumentTypes(data);
+    } catch (error) {
+      console.error("Error fetching document types:", error);
+    }
+  };
+
   const fetchDocuments = async () => {
     try {
       setLoading(true);
@@ -115,6 +166,7 @@ export default function ApproverPage() {
       if (!response.ok) throw new Error("Failed to fetch documents");
       const data = await response.json();
       setDocuments(data);
+      setFilteredDocuments(data);
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Failed to load documents"
@@ -132,8 +184,71 @@ export default function ApproverPage() {
       }
       fetchDocuments();
       fetchDepartmentName();
+      fetchDocumentTypes();
     }
   }, [status, session?.user.role, fetchDepartmentName]);
+
+  // Apply filters and sorting to documents
+  useEffect(() => {
+    let result = [...documents];
+
+    // Apply status filter
+    if (statusFilter !== "ALL") {
+      result = result.filter((doc) => doc.status === statusFilter);
+    }
+
+    // Apply type filter
+    if (typeFilter !== "ALL") {
+      result = result.filter((doc) => doc.type.id === typeFilter);
+    }
+
+    // Apply search filter
+    if (searchText) {
+      const searchLower = searchText.toLowerCase();
+      result = result.filter(
+        (doc) =>
+          doc.name.toLowerCase().includes(searchLower) ||
+          doc.submitter.name.toLowerCase().includes(searchLower) ||
+          doc.description.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply sorting
+    if (sortConfig.key) {
+      result.sort((a, b) => {
+        let aValue: any;
+        let bValue: any;
+
+        // Handle nested properties
+        if (sortConfig.key === "type") {
+          aValue = a.type.name;
+          bValue = b.type.name;
+        } else if (sortConfig.key === "submitter") {
+          aValue = a.submitter.name;
+          bValue = b.submitter.name;
+        } else {
+          aValue = a[sortConfig.key as keyof typeof a];
+          bValue = b[sortConfig.key as keyof typeof b];
+        }
+
+        // Handle date comparison
+        if (sortConfig.key === "createdAt") {
+          aValue = new Date(aValue).getTime();
+          bValue = new Date(bValue).getTime();
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === "asc" ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    setFilteredDocuments(result);
+  }, [documents, statusFilter, typeFilter, searchText, sortConfig]);
 
   const updateDocumentStatus = async (
     documentId: string,
@@ -214,6 +329,25 @@ export default function ApproverPage() {
     }
   };
 
+  const handleSort = (key: keyof DocumentWithRelations) => {
+    setSortConfig((prevConfig) => {
+      if (prevConfig.key === key) {
+        return {
+          key,
+          direction: prevConfig.direction === "asc" ? "desc" : "asc",
+        };
+      }
+      return { key, direction: "asc" };
+    });
+  };
+
+  const resetFilters = () => {
+    setStatusFilter("ALL");
+    setTypeFilter("ALL");
+    setSearchText("");
+    setSortConfig({ key: null, direction: "desc" });
+  };
+
   if (status === "loading") {
     return <DocumentsTableSkeleton />;
   }
@@ -238,6 +372,62 @@ export default function ApproverPage() {
         </h1>
       </div>
 
+      {/* Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="relative">
+          <Input
+            placeholder="Search documents..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="pl-9"
+          />
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          {searchText && (
+            <button
+              onClick={() => setSearchText("")}
+              className="absolute right-3 top-3"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
+        </div>
+
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent className="border border-border shadow-md rounded-md bg-background text-foreground">
+            <SelectItem value="ALL">All Statuses</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="APPROVED">Approved</SelectItem>
+            <SelectItem value="REJECTED">Rejected</SelectItem>
+            <SelectItem value="NEEDS_REVIEW">Needs Review</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger>
+            <SelectValue placeholder="Filter by type" />
+          </SelectTrigger>
+          <SelectContent className="border border-border shadow-md rounded-md bg-background text-foreground">
+            <SelectItem value="ALL">All Types</SelectItem>
+            {documentTypes.map((type) => (
+              <SelectItem key={type.id} value={type.id}>
+                {type.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Button
+          variant="outline"
+          onClick={resetFilters}
+          className="flex items-center gap-2"
+        >
+          <X className="h-4 w-4" /> Clear Filters
+        </Button>
+      </div>
+
       {loading ? (
         <DocumentsTableSkeleton />
       ) : (
@@ -245,16 +435,75 @@ export default function ApproverPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[200px] font-semibold">Name</TableHead>
-                <TableHead className="w-[120px] font-semibold">Type</TableHead>
-                <TableHead className="w-[140px] font-semibold">
-                  Submitter
+                <TableHead
+                  className="w-[200px] font-semibold cursor-pointer"
+                  onClick={() => handleSort("name")}
+                >
+                  <div className="flex items-center">
+                    Name
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    {sortConfig.key === "name" && (
+                      <span className="ml-1 text-xs">
+                        {sortConfig.direction === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
+                  </div>
                 </TableHead>
-                <TableHead className="w-[120px] font-semibold">
-                  Status
+                <TableHead
+                  className="w-[120px] font-semibold cursor-pointer"
+                  onClick={() => handleSort("type")}
+                >
+                  <div className="flex items-center">
+                    Type
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    {sortConfig.key === "type" && (
+                      <span className="ml-1 text-xs">
+                        {sortConfig.direction === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
+                  </div>
                 </TableHead>
-                <TableHead className="w-[120px] font-semibold">
-                  Submitted
+                <TableHead
+                  className="w-[140px] font-semibold cursor-pointer"
+                  onClick={() => handleSort("submitter")}
+                >
+                  <div className="flex items-center">
+                    Submitter
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    {sortConfig.key === "submitter" && (
+                      <span className="ml-1 text-xs">
+                        {sortConfig.direction === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="w-[120px] font-semibold cursor-pointer"
+                  onClick={() => handleSort("status")}
+                >
+                  <div className="flex items-center">
+                    Status
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    {sortConfig.key === "status" && (
+                      <span className="ml-1 text-xs">
+                        {sortConfig.direction === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="w-[120px] font-semibold cursor-pointer"
+                  onClick={() => handleSort("createdAt")}
+                >
+                  <div className="flex items-center">
+                    Submitted
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    {sortConfig.key === "createdAt" && (
+                      <span className="ml-1 text-xs">
+                        {sortConfig.direction === "asc" ? "↑" : "↓"}
+                      </span>
+                    )}
+                  </div>
                 </TableHead>
                 <TableHead className="w-[100px] text-right font-semibold">
                   Actions
@@ -262,7 +511,7 @@ export default function ApproverPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {documents.map((doc) => (
+              {filteredDocuments.map((doc) => (
                 <TableRow
                   key={doc.id}
                   className="hover:bg-muted/50 transition-colors"
@@ -287,13 +536,13 @@ export default function ApproverPage() {
                   </TableCell>
                 </TableRow>
               ))}
-              {documents.length === 0 && (
+              {filteredDocuments.length === 0 && (
                 <TableRow>
                   <TableCell
                     colSpan={6}
                     className="h-24 text-center text-muted-foreground"
                   >
-                    No documents to review
+                    No documents match your filters
                   </TableCell>
                 </TableRow>
               )}
