@@ -28,6 +28,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { User, UserRole, Department, Site } from "@/types";
 import EditUserModal from "@/components/EditUserModal";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function UsersManagement() {
   const [users, setUsers] = useState<User[]>([]);
@@ -192,14 +199,14 @@ export default function UsersManagement() {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">User Management</h1>
+    <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">User Management</h1>
         <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
           <DialogTrigger asChild>
             <Button>Add User</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="w-[95vw] max-w-md mx-auto">
             <DialogHeader>
               <DialogTitle>Add New User</DialogTitle>
             </DialogHeader>
@@ -329,58 +336,160 @@ export default function UsersManagement() {
         onSave={handleEditUser}
       />
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Site</TableHead>
-            <TableHead>Department</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>{user.name}</TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>
-                <Select
-                  value={user.role}
-                  onValueChange={(value: string) =>
-                    handleUpdateUserRole(user.id, value as UserRole)
-                  }
-                >
-                  <SelectTrigger className="bg-background text-foreground border border-border rounded-md shadow-sm">
-                    <SelectValue>{getRoleDisplay(user.role)}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
-                    {roleOptions.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {getRoleDisplay(role)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </TableCell>
-              <TableCell>{getSiteDisplay(user?.site)}</TableCell>
-              <TableCell>{getDepartmentDisplay(user.department)}</TableCell>
-              <TableCell className="space-x-2">
-                <Button variant="outline" onClick={() => openEditModal(user)}>
-                  Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => handleDeleteUser(user.id)}
-                >
-                  Delete
-                </Button>
-              </TableCell>
+      {/* Mobile Card View (visible on small screens) */}
+      <div className="grid grid-cols-1 gap-4 md:hidden">
+        {users.map((user) => (
+          <Card key={user.id} className="overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xl">{user.name}</CardTitle>
+              <p className="text-sm text-muted-foreground break-all">
+                {user.email}
+              </p>
+            </CardHeader>
+            <CardContent className="pb-2 space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium mb-1">
+                    Role
+                  </p>
+                  <Select
+                    value={user.role}
+                    onValueChange={(value: string) =>
+                      handleUpdateUserRole(user.id, value as UserRole)
+                    }
+                  >
+                    <SelectTrigger className="w-full h-9 text-sm bg-background text-foreground border border-border rounded-md shadow-sm">
+                      <SelectValue>{getRoleDisplay(user.role)}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
+                      {roleOptions.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {getRoleDisplay(role)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium mb-1">
+                    Site
+                  </p>
+                  <p className="text-sm">{getSiteDisplay(user?.site)}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium mb-1">
+                  Department
+                </p>
+                <p className="text-sm">
+                  {getDepartmentDisplay(user.department)}
+                </p>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-[48%]"
+                onClick={() => openEditModal(user)}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="w-[48%]"
+                onClick={() => handleDeleteUser(user.id)}
+              >
+                Delete
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+        {users.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No users found</p>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View (hidden on small screens, visible on medium and up) */}
+      <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="whitespace-nowrap">Name</TableHead>
+              <TableHead className="whitespace-nowrap">Email</TableHead>
+              <TableHead className="whitespace-nowrap">Role</TableHead>
+              <TableHead className="whitespace-nowrap">Site</TableHead>
+              <TableHead className="whitespace-nowrap">Department</TableHead>
+              <TableHead className="whitespace-nowrap">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell className="font-medium">{user.name}</TableCell>
+                <TableCell className="max-w-[150px] truncate sm:max-w-none sm:whitespace-normal">
+                  {user.email}
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={user.role}
+                    onValueChange={(value: string) =>
+                      handleUpdateUserRole(user.id, value as UserRole)
+                    }
+                  >
+                    <SelectTrigger className="w-full sm:w-auto bg-background text-foreground border border-border rounded-md shadow-sm">
+                      <SelectValue>{getRoleDisplay(user.role)}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
+                      {roleOptions.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {getRoleDisplay(role)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell className="max-w-[100px] truncate sm:max-w-none sm:whitespace-normal">
+                  {getSiteDisplay(user?.site)}
+                </TableCell>
+                <TableCell className="max-w-[100px] truncate sm:max-w-none sm:whitespace-normal">
+                  {getDepartmentDisplay(user.department)}
+                </TableCell>
+                <TableCell className="space-y-2 sm:space-y-0 sm:space-x-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      onClick={() => openEditModal(user)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      onClick={() => handleDeleteUser(user.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Empty state for desktop view */}
+      {users.length === 0 && (
+        <div className="hidden md:block text-center py-8">
+          <p className="text-gray-500">No users found</p>
+        </div>
+      )}
     </div>
   );
 }
