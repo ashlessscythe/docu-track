@@ -27,6 +27,7 @@ export const PasswordResetEmail: React.FC<
   Readonly<PasswordResetEmailProps>
 > = ({ name, appName, resetLink }) => {
   const previewText = `Reset your ${appName} password`;
+  const currentYear = new Date().getFullYear();
 
   return (
     <Html>
@@ -86,7 +87,7 @@ export const PasswordResetEmail: React.FC<
               </Text>
             </Section>
             <Text className="text-gray-500 text-[12px] leading-[24px] mt-[32px]">
-              &copy; {new Date().getFullYear()} {appName}. All rights reserved.
+              &copy; {currentYear} {appName}. All rights reserved.
             </Text>
           </Container>
         </Body>
