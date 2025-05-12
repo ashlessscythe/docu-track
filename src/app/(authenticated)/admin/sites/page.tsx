@@ -27,12 +27,28 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import type { Site } from "@/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Site, User } from "@/types";
+import { Badge } from "@/components/ui/badge";
 
 export default function SitesManagement() {
   const [sites, setSites] = useState<Site[]>([]);
   const [isAddSiteOpen, setIsAddSiteOpen] = useState(false);
   const [isEditSiteOpen, setIsEditSiteOpen] = useState(false);
+  const [isViewUsersOpen, setIsViewUsersOpen] = useState(false);
+  const [isMoveUserOpen, setIsMoveUserOpen] = useState(false);
+  const [siteUsers, setSiteUsers] = useState<User[]>([]);
+  const [currentSite, setCurrentSite] = useState<Site | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedSiteId, setSelectedSiteId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isMovingUser, setIsMovingUser] = useState(false);
   const [newSite, setNewSite] = useState({
     name: "",
     description: "",
@@ -50,6 +66,77 @@ export default function SitesManagement() {
       setSites(data);
     } catch (error) {
       console.error("Failed to fetch sites:", error);
+    }
+  };
+
+  const fetchSiteUsers = async (siteId: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/admin/sites/${siteId}/users`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch site users");
+      }
+      const data = await response.json();
+      setSiteUsers(data);
+    } catch (error) {
+      console.error("Failed to fetch site users:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleViewUsers = (site: Site) => {
+    setCurrentSite(site);
+    fetchSiteUsers(site.id);
+    setIsViewUsersOpen(true);
+  };
+
+  const handleMoveUser = (user: User) => {
+    setSelectedUser(user);
+    setSelectedSiteId("");
+    setIsMoveUserOpen(true);
+  };
+
+  const handleUserSiteChange = async () => {
+    if (!selectedUser || !selectedSiteId) return;
+
+    setIsMovingUser(true);
+    try {
+      const response = await fetch(
+        `/api/admin/users/${selectedUser.id}/update-site`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            siteId: selectedSiteId,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(errorData.error || "Failed to move user");
+        return;
+      }
+
+      // Close the move dialog
+      setIsMoveUserOpen(false);
+
+      // Refresh the users list if we're still viewing the same site
+      if (currentSite) {
+        fetchSiteUsers(currentSite.id);
+      }
+
+      // Reset selected user and site
+      setSelectedUser(null);
+      setSelectedSiteId("");
+    } catch (error) {
+      console.error("Failed to move user:", error);
+      alert("An error occurred while moving the user");
+    } finally {
+      setIsMovingUser(false);
     }
   };
 
@@ -121,6 +208,23 @@ export default function SitesManagement() {
       fetchSites();
     } catch (error) {
       console.error("Failed to delete site:", error);
+    }
+  };
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case "ADMIN":
+        return "bg-red-500";
+      case "APPROVER":
+        return "bg-blue-500";
+      case "SUBMITTER":
+        return "bg-green-500";
+      case "REPORTER":
+        return "bg-purple-500";
+      case "PENDING":
+        return "bg-yellow-500";
+      default:
+        return "bg-gray-500";
     }
   };
 
@@ -199,6 +303,12 @@ export default function SitesManagement() {
                   >
                     Delete
                   </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleViewUsers(site)}
+                  >
+                    View Users
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -221,7 +331,7 @@ export default function SitesManagement() {
                 <div className="text-sm">{site.description || "N/A"}</div>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between gap-2">
+            <CardFooter className="flex flex-wrap justify-between gap-2">
               <Button
                 variant="outline"
                 className="flex-1"
@@ -238,6 +348,13 @@ export default function SitesManagement() {
                 onClick={() => handleDeleteSite(site.id)}
               >
                 Delete
+              </Button>
+              <Button
+                variant="secondary"
+                className="flex-1 mt-2 w-full"
+                onClick={() => handleViewUsers(site)}
+              >
+                View Users
               </Button>
             </CardFooter>
           </Card>
@@ -283,6 +400,181 @@ export default function SitesManagement() {
           </div>
           <div className="flex justify-end">
             <Button onClick={handleEditSite}>Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Site Users Dialog */}
+      <Dialog open={isViewUsersOpen} onOpenChange={setIsViewUsersOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Users for {currentSite?.name || "Selected Site"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            {isLoading ? (
+              <div className="text-center p-8">Loading users...</div>
+            ) : (
+              <>
+                {siteUsers.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    {/* Desktop Users Table */}
+                    <div className="hidden md:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Department</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {siteUsers.map((user) => (
+                            <TableRow key={user.id}>
+                              <TableCell>{user.name}</TableCell>
+                              <TableCell>{user.email}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={`${getRoleBadgeColor(user.role)}`}
+                                >
+                                  {user.role}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {user.department?.name || "N/A"}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleMoveUser(user)}
+                                >
+                                  Move to Site
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* Mobile Users Cards */}
+                    <div className="grid grid-cols-1 gap-4 md:hidden">
+                      {siteUsers.map((user) => (
+                        <Card key={user.id} className="overflow-hidden">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">
+                              {user.name}
+                            </CardTitle>
+                            <div className="text-sm text-muted-foreground">
+                              {user.email}
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-3 py-2">
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm text-muted-foreground">
+                                Role
+                              </div>
+                              <Badge
+                                className={`${getRoleBadgeColor(user.role)}`}
+                              >
+                                {user.role}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm text-muted-foreground">
+                                Department
+                              </div>
+                              <div className="text-sm font-medium">
+                                {user.department?.name || "N/A"}
+                              </div>
+                            </div>
+                          </CardContent>
+                          <CardFooter>
+                            <Button
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => handleMoveUser(user)}
+                            >
+                              Move to Site
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center p-8 border rounded-lg bg-muted/10 text-muted-foreground">
+                    No users found for this site
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={() => setIsViewUsersOpen(false)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Move User Dialog */}
+      <Dialog open={isMoveUserOpen} onOpenChange={setIsMoveUserOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Move User to Another Site</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedUser && (
+              <div className="mb-4">
+                <p className="text-sm text-muted-foreground mb-1">User</p>
+                <p className="font-medium">{selectedUser.name}</p>
+                <p className="text-sm">{selectedUser.email}</p>
+              </div>
+            )}
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="site-select">Select Destination Site</Label>
+                <Select
+                  value={selectedSiteId}
+                  onValueChange={setSelectedSiteId}
+                >
+                  <SelectTrigger id="site-select">
+                    <SelectValue placeholder="Select a site" />
+                  </SelectTrigger>
+                  <SelectContent className="border border-border rounded-md shadow-sm bg-background text-foreground">
+                    {sites
+                      .filter((site) => site.id !== currentSite?.id) // Filter out current site
+                      .map((site) => (
+                        <SelectItem key={site.id} value={site.id}>
+                          {site.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="text-sm text-amber-600">
+                Note: Moving a user to another site will remove their department
+                association.
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsMoveUserOpen(false)}
+              disabled={isMovingUser}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUserSiteChange}
+              disabled={!selectedSiteId || isMovingUser}
+            >
+              {isMovingUser ? "Moving..." : "Move User"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
