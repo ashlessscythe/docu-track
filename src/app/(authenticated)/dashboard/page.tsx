@@ -1,5 +1,3 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
@@ -10,15 +8,15 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { APP_NAME } from "@/lib/config";
+import { stackServerApp } from "@/stack";
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
+  // Get the user from Stack Auth, redirect to sign-in if not authenticated
+  const user = await stackServerApp.getUser({ or: "redirect" });
 
-  if (!session) {
-    redirect("/signin");
-  }
-
-  if (session.user.role === "PENDING") {
+  // Check if user has PENDING permission
+  const isPending = await user.getPermission("PENDING");
+  if (isPending) {
     redirect("/pending");
   }
 
@@ -29,8 +27,7 @@ export default async function DashboardPage() {
           Welcome to {APP_NAME}
         </h1>
         <p className="p-3 text-muted-foreground text-lg">
-          You are logged in as a{" "}
-          {session.user.role ? session.user.role.toLowerCase() : "user"} user
+          You are logged in as a user
         </p>
       </div>
 
@@ -100,7 +97,7 @@ export default async function DashboardPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Role</span>
                 <span className="text-sm text-muted-foreground capitalize">
-                  {session.user.role ? session.user.role.toLowerCase() : "user"}
+                  user
                 </span>
               </div>
               <div className="flex items-center justify-between">

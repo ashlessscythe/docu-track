@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useUser } from "@stackframe/stack";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 export function FeedbackDialog() {
-  const { data: session } = useSession();
+  const user = useUser();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -67,7 +67,7 @@ export function FeedbackDialog() {
     }
   };
 
-  if (!session) {
+  if (!user) {
     return null;
   }
 

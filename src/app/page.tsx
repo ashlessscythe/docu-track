@@ -1,16 +1,16 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { APP_NAME } from "@/lib/config";
 import { LandingHeader } from "@/components/LandingHeader";
+import { stackServerApp } from "@/stack";
 
 export default async function HomePage() {
-  const session = await getServerSession(authOptions);
+  // Try to get the user, but don't redirect if not authenticated
+  const user = await stackServerApp.getUser().catch(() => null);
 
   return (
     <div className="min-h-screen bg-background">
-      <LandingHeader session={session} appName={APP_NAME} />
+      <LandingHeader user={user} appName={APP_NAME} />
 
       <main>
         {/* Hero Section */}
@@ -27,7 +27,7 @@ export default async function HomePage() {
                 Streamline your document approval process with {APP_NAME}.
                 Track, manage, and approve documents efficiently in one place.
               </p>
-              {!session && (
+              {!user && (
                 <div className="mt-10">
                   <Link href="/register">
                     <Button size="lg">Get Started</Button>

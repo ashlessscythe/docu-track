@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useUser, UserButton } from "@stackframe/stack";
 import Link from "next/link";
 import { useTheme } from "./theme-provider";
 import { Button } from "./ui/button";
@@ -14,7 +14,7 @@ import {
 } from "../../components/ui/dropdown-menu";
 
 export function Header() {
-  const { data: session } = useSession();
+  const user = useUser();
   const { theme, setTheme } = useTheme();
 
   // Theme icon mapping
@@ -35,6 +35,12 @@ export function Header() {
     }
   };
 
+  // Check user permissions
+  const isAdmin = user?.usePermission("ADMIN");
+  const isApprover = user?.usePermission("APPROVER");
+  const isSubmitter = user?.usePermission("SUBMITTER");
+  const isReporter = user?.usePermission("REPORTER");
+
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <nav className="container mx-auto px-4 py-3 flex justify-between items-center">
@@ -44,7 +50,7 @@ export function Header() {
               Home
             </Link>
           </li>
-          {session && (
+          {user && (
             <>
               <li>
                 <Link
@@ -62,7 +68,7 @@ export function Header() {
                   Templates
                 </Link>
               </li>
-              {session.user.role === "ADMIN" && (
+              {isAdmin && (
                 <li>
                   <Link
                     href="/admin"
@@ -72,8 +78,7 @@ export function Header() {
                   </Link>
                 </li>
               )}
-              {(session.user.role === "APPROVER" ||
-                session.user.role === "ADMIN") && (
+              {(isApprover || isAdmin) && (
                 <li>
                   <Link
                     href="/approver"
@@ -83,8 +88,7 @@ export function Header() {
                   </Link>
                 </li>
               )}
-              {(session.user.role === "SUBMITTER" ||
-                session.user.role === "ADMIN") && (
+              {(isSubmitter || isAdmin) && (
                 <li>
                   <Link
                     href="/submitter"
@@ -94,8 +98,7 @@ export function Header() {
                   </Link>
                 </li>
               )}
-              {(session.user.role === "REPORTER" ||
-                session.user.role === "ADMIN") && (
+              {(isReporter || isAdmin) && (
                 <li>
                   <Link
                     href="/reports"
@@ -107,10 +110,10 @@ export function Header() {
               )}
             </>
           )}
-          {!session && (
+          {!user && (
             <li>
               <Link
-                href="/signin"
+                href="/handler/sign-in"
                 className="text-foreground hover:text-foreground/80"
               >
                 Sign In
@@ -118,7 +121,7 @@ export function Header() {
             </li>
           )}
         </ul>
-        {session && (
+        {user && (
           <div className="flex items-center space-x-4">
             <FeedbackDialog />
 
@@ -157,8 +160,12 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* User Button */}
+            <UserButton />
+
+            {/* Sign Out Link */}
             <Link
-              href="/signout"
+              href="/handler/sign-out"
               className="border rounded px-2 py-1 text-white bg-red-600 hover:bg-red-700 transition-colors 
              dark:bg-red-500 dark:hover:bg-red-600"
             >

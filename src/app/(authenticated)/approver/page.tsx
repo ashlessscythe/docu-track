@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { useUser } from "@stackframe/stack";
 import { redirect } from "next/navigation";
 import {
   Table,
@@ -143,12 +143,7 @@ function DocumentsTableSkeleton() {
 }
 
 export default function ApproverPage() {
-  const { data: session, status } = useSession({
-    required: true,
-    onUnauthenticated() {
-      redirect("/signin");
-    },
-  });
+  const user = useUser({ or: "redirect" });
 
   const [documents, setDocuments] = useState<DocumentWithRelations[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<
@@ -175,11 +170,11 @@ export default function ApproverPage() {
   const [searchText, setSearchText] = useState<string>("");
 
   const fetchDepartmentName = useCallback(async () => {
-    if (!session?.user.departmentId) return;
+    if (!user?.clientMetadata?.departmentId) return;
 
     try {
       const response = await fetch(
-        `/api/departments/${session.user.departmentId}`
+        `/api/departments/${user.clientMetadata.departmentId}`
       );
       if (!response.ok) throw new Error("Failed to fetch department");
       const data = await response.json();
@@ -187,7 +182,7 @@ export default function ApproverPage() {
     } catch (error) {
       console.error("Error fetching department:", error);
     }
-  }, [session?.user.departmentId]);
+  }, [user?.clientMetadata?.departmentId]);
 
   const fetchDocumentTypes = async () => {
     try {
@@ -218,16 +213,23 @@ export default function ApproverPage() {
   };
 
   useEffect(() => {
-    if (status === "authenticated") {
-      if (session.user.role !== "APPROVER" && session.user.role !== "ADMIN") {
+    // Check if user has APPROVER or ADMIN permission
+    const checkPermissions = async () => {
+      const isApprover = await user.getPermission("APPROVER");
+      const isAdmin = await user.getPermission("ADMIN");
+
+      if (!isApprover && !isAdmin) {
         redirect("/unauthorized");
         return;
       }
+
       fetchDocuments();
       fetchDepartmentName();
       fetchDocumentTypes();
-    }
-  }, [status, session?.user.role, fetchDepartmentName]);
+    };
+
+    checkPermissions();
+  }, [user, fetchDepartmentName]);
 
   // Apply filters and sorting to documents
   useEffect(() => {
@@ -389,9 +391,7 @@ export default function ApproverPage() {
     setSortConfig({ key: null, direction: "desc" });
   };
 
-  if (status === "loading") {
-    return <DocumentsTableSkeleton />;
-  }
+  // Loading state is handled by useUser's suspense
 
   if (error) {
     return (
@@ -407,9 +407,9 @@ export default function ApproverPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold tracking-tight">
-          {session.user.role === "ADMIN"
-            ? "All Documents"
-            : `${departmentName} Department Documents`}
+          {departmentName
+            ? `${departmentName} Department Documents`
+            : "All Documents"}
         </h1>
       </div>
 

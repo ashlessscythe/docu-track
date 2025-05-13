@@ -205,6 +205,27 @@
 
 ---
 
+## **Milestone 11: Authentication Migration**
+
+- [ ] **Migrate from NextAuth to Stack Auth**
+  - [ ] Set up Stack Auth project and API keys
+  - [ ] Implement Stack Auth configuration and handlers
+  - [ ] Update authentication pages and components
+  - [ ] Migrate user data and roles to Stack Auth
+  - [ ] Test authentication flows and role-based access
+  - [ ] Remove NextAuth dependencies
+
+**Description:**
+
+- Migrate the authentication system from NextAuth to Stack Auth.
+- Set up roles and permissions in Stack Auth to match the existing RBAC system.
+- Ensure all authentication flows (sign in, register, sign out, password reset) work correctly.
+- Update all components and pages to use Stack Auth instead of NextAuth.
+
+**Deploy and Test:** Deploy to test the new authentication system and ensure all user roles and permissions work correctly.
+
+---
+
 # **Notes**
 
 - **Continuous Deployment and Testing:** Each milestone concludes with a deployment and testing phase. This approach ensures that any issues are identified early and makes debugging easier.

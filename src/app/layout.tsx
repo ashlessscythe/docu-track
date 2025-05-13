@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { AuthProvider } from "@/context/auth-context";
+import { StackProvider, StackTheme } from "@stackframe/stack";
+import { stackServerApp } from "@/stack";
 import { APP_NAME } from "@/lib/config";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -36,7 +37,9 @@ export default function RootLayout({
         className={`h-full ${geist.variable} ${geistMono.variable} font-sans antialiased`}
       >
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <StackProvider app={stackServerApp}>
+            <StackTheme>{children}</StackTheme>
+          </StackProvider>
         </ThemeProvider>
       </body>
     </html>

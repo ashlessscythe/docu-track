@@ -1,29 +1,27 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { UserRole } from "@prisma/client";
+import { stackServerApp } from "@/stack";
 
 export default async function PendingPage() {
-  const session = await getServerSession(authOptions);
+  // Get the user from Stack Auth, redirect to sign-in if not authenticated
+  const user = await stackServerApp.getUser({ or: "redirect" });
 
-  if (!session) {
-    redirect("/signin");
-  }
+  // Check if user has PENDING permission
+  const isPending = await user.getPermission("PENDING");
 
-  if (session.user.role !== UserRole.PENDING) {
+  if (!isPending) {
     // If user is not pending, redirect them to their appropriate dashboard
-    switch (session.user.role) {
-      case UserRole.ADMIN:
-        redirect("/admin");
-        break;
-      case UserRole.APPROVER:
-        redirect("/approver");
-        break;
-      case UserRole.SUBMITTER:
-        redirect("/submitter");
-        break;
-      default:
-        redirect("/");
+    const isAdmin = await user.getPermission("ADMIN");
+    const isApprover = await user.getPermission("APPROVER");
+    const isSubmitter = await user.getPermission("SUBMITTER");
+
+    if (isAdmin) {
+      redirect("/admin");
+    } else if (isApprover) {
+      redirect("/approver");
+    } else if (isSubmitter) {
+      redirect("/submitter");
+    } else {
+      redirect("/");
     }
   }
 

@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useUser } from "@stackframe/stack";
 
 interface Department {
   id: string;
@@ -53,7 +53,7 @@ export function DocumentSubmissionForm({
   const [departments, setDepartments] = useState<Department[]>([]);
   const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
   const router = useRouter();
-  const { data: session } = useSession();
+  const user = useUser();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -103,7 +103,7 @@ export function DocumentSubmissionForm({
       const formData = new FormData();
       formData.append("typeId", values.typeId);
       formData.append("description", values.description);
-      if (values.departmentId && session?.user.role !== "PENDING") {
+      if (values.departmentId) {
         formData.append("departmentId", values.departmentId);
       }
       formData.append("file", file);
@@ -187,7 +187,8 @@ export function DocumentSubmissionForm({
           )}
         />
 
-        {session?.user.role !== "PENDING" && (
+        {/* Only show department selection if user doesn't have PENDING permission */}
+        {user && (
           <FormField
             control={form.control}
             name="departmentId"

@@ -12,11 +12,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface LandingHeaderProps {
-  session: any;
+  user: any;
   appName: string;
 }
 
-export function LandingHeader({ session, appName }: LandingHeaderProps) {
+export function LandingHeader({ user, appName }: LandingHeaderProps) {
   const { theme, setTheme } = useTheme();
 
   // Theme icon mapping
@@ -77,18 +77,18 @@ export function LandingHeader({ session, appName }: LandingHeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {session ? (
+          {user ? (
             <>
               <Link href="/dashboard">
                 <Button>Go to Dashboard</Button>
               </Link>
-              <Link href="/signout">
+              <Link href="/handler/sign-out">
                 <Button variant="destructive">Sign Out</Button>
               </Link>
             </>
           ) : (
             <>
-              <Link href="/signin">
+              <Link href="/handler/sign-in">
                 <Button variant="outline">Sign In</Button>
               </Link>
               <Link href="/register">

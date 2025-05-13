@@ -1,11 +1,10 @@
 import { Metadata } from "next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { DocumentsTable } from "@/components/DocumentsTable";
 import { Header } from "@/components/Header";
+import { stackServerApp } from "@/stack";
 
 export const metadata: Metadata = {
   title: "Documents | Admin",
@@ -13,9 +12,13 @@ export const metadata: Metadata = {
 };
 
 export default async function DocumentsPage() {
-  const session = await getServerSession(authOptions);
+  // Get the user from Stack Auth, redirect to sign-in if not authenticated
+  const user = await stackServerApp.getUser({ or: "redirect" });
 
-  if (!session || session.user.role !== "ADMIN") {
+  // Check if user has ADMIN permission
+  const isAdmin = await user.getPermission("ADMIN");
+
+  if (!isAdmin) {
     redirect("/unauthorized");
   }
 
