@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { stackServerApp } from "@/stack";
+import { getUser, checkUserPermissions } from "@/lib/middleware-actions";
+import { TeamPermission } from "@/lib/types";
 
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
@@ -22,23 +23,27 @@ export async function middleware(req: NextRequest) {
   }
 
   try {
-    // Get the user from Stack Auth
-    const user = await stackServerApp.getUser();
+    // Get the user from Stack Auth using server action
+    const user = await getUser();
 
     if (!user) {
       // Redirect to sign in if no user
       return NextResponse.redirect(new URL("/handler/sign-in", req.url));
     }
 
-    // Check user permissions based on roles
-    const isAdmin = await user.getPermission("ADMIN");
-    const isApprover = await user.getPermission("APPROVER");
-    const isSubmitter = await user.getPermission("SUBMITTER");
-    const isPending = await user.getPermission("PENDING");
-    const isReporter = await user.getPermission("REPORTER");
+    // Check user permissions based on roles using server action
+    const {
+      isAdmin,
+      isApprover,
+      isSubmitter,
+      isPending,
+      isReporter,
+      isSiteAdmin,
+      primaryTeam,
+    } = await checkUserPermissions();
 
-    // Admin has access to everything
-    if (isAdmin) {
+    // Admin and site_admin have access to everything
+    if (isAdmin || isSiteAdmin) {
       return NextResponse.next();
     }
 

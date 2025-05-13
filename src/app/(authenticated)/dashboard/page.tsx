@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   Card,
@@ -8,17 +7,16 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { APP_NAME } from "@/lib/config";
-import { stackServerApp } from "@/stack";
+import { checkPendingAndRedirect, getUserRole } from "@/lib/server-actions";
+import { getUserTeamPermissions } from "@/lib/team-permissions";
+import { TeamPermission } from "@/src/lib/types";
 
 export default async function DashboardPage() {
-  // Get the user from Stack Auth, redirect to sign-in if not authenticated
-  const user = await stackServerApp.getUser({ or: "redirect" });
-
-  // Check if user has PENDING permission
-  const isPending = await user.getPermission("PENDING");
-  if (isPending) {
-    redirect("/pending");
-  }
+  // Get the user data and check if they have PENDING permission
+  // This will redirect to /pending if the user has PENDING permission
+  const userData = await checkPendingAndRedirect();
+  const teamPermissions = await getUserTeamPermissions();
+  const userRole = await getUserRole();
 
   return (
     <div className="space-y-8">
@@ -27,7 +25,7 @@ export default async function DashboardPage() {
           Welcome to {APP_NAME}
         </h1>
         <p className="p-3 text-muted-foreground text-lg">
-          You are logged in as a user
+          You are logged in with role: {userRole.role}
         </p>
       </div>
 
@@ -97,7 +95,7 @@ export default async function DashboardPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Role</span>
                 <span className="text-sm text-muted-foreground capitalize">
-                  user
+                  {userRole.role}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -107,6 +105,30 @@ export default async function DashboardPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">System</span>
                 <span className="text-sm text-muted-foreground">Online</span>
+              </div>
+              <div className="mt-4 pt-4 border-t">
+                <span className="text-sm font-medium block mb-2">
+                  Team Permissions:
+                </span>
+                <ul className="space-y-1">
+                  {Object.entries(teamPermissions).map(
+                    ([permission, hasPermission]) => (
+                      <li
+                        key={permission}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="text-xs capitalize">
+                          {permission.replace("_", " ")}
+                        </span>
+                        <span
+                          className={`text-xs ${hasPermission ? "text-green-600" : "text-red-600"}`}
+                        >
+                          {hasPermission ? "Yes" : "No"}
+                        </span>
+                      </li>
+                    )
+                  )}
+                </ul>
               </div>
             </div>
           </CardContent>
