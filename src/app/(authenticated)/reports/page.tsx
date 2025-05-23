@@ -39,6 +39,16 @@ interface DocumentStats {
   needsReview: number;
 }
 
+interface DocumentTypeStats {
+  type: string;
+  typeId: string;
+  total: number;
+  approved: number;
+  pending: number;
+  rejected: number;
+  needsReview: number;
+}
+
 interface DailyStats {
   day: number;
   total: number;
@@ -50,11 +60,14 @@ interface DailyStats {
 
 export default function ReportsPage() {
   const [deptData, setDeptData] = React.useState<DocumentStats[]>([]);
+  const [typeData, setTypeData] = React.useState<DocumentTypeStats[]>([]);
   const [monthlyData, setMonthlyData] = React.useState<DailyStats[]>([]);
   const [deptLoading, setDeptLoading] = React.useState(true);
+  const [typeLoading, setTypeLoading] = React.useState(true);
   const [monthlyLoading, setMonthlyLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [isMaximized, setIsMaximized] = React.useState(false);
+  const [isDeptMaximized, setIsDeptMaximized] = React.useState(false);
+  const [isTypeMaximized, setIsTypeMaximized] = React.useState(false);
   const [selectedMonth, setSelectedMonth] = React.useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
@@ -81,6 +94,24 @@ export default function ReportsPage() {
       }
     };
     fetchDeptData();
+  }, []);
+
+  // Fetch document type data only on initial load
+  React.useEffect(() => {
+    const fetchTypeData = async () => {
+      try {
+        setTypeLoading(true);
+        const response = await fetch("/api/admin/reports/documents-by-type");
+        if (!response.ok) throw new Error("Failed to fetch document type data");
+        const stats = await response.json();
+        setTypeData(stats);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setTypeLoading(false);
+      }
+    };
+    fetchTypeData();
   }, []);
 
   // Fetch monthly data when month changes
@@ -118,7 +149,9 @@ export default function ReportsPage() {
     <div className="container mx-auto py-10">
       <h1 className="text-4xl font-bold mb-8">Document Analytics</h1>
 
-      <Card className={isMaximized ? "fixed inset-4 z-50 overflow-auto" : ""}>
+      <Card
+        className={isDeptMaximized ? "fixed inset-4 z-50 overflow-auto" : ""}
+      >
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Documents by Department</CardTitle>
@@ -129,9 +162,9 @@ export default function ReportsPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsMaximized(!isMaximized)}
+            onClick={() => setIsDeptMaximized(!isDeptMaximized)}
           >
-            {isMaximized ? (
+            {isDeptMaximized ? (
               <Minimize2 className="h-4 w-4" />
             ) : (
               <Maximize2 className="h-4 w-4" />
@@ -145,7 +178,9 @@ export default function ReportsPage() {
             </div>
           ) : (
             <div
-              className={isMaximized ? "h-[calc(100vh-200px)]" : "h-[400px]"}
+              className={
+                isDeptMaximized ? "h-[calc(100vh-200px)]" : "h-[400px]"
+              }
             >
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -272,6 +307,87 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
+      {/* New Card for Document Type Breakdown */}
+      <Card
+        className={`mt-8 ${isTypeMaximized ? "fixed inset-4 z-50 overflow-auto" : ""}`}
+      >
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Documents by Type</CardTitle>
+            <CardDescription>
+              Breakdown of document statuses across document types
+            </CardDescription>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsTypeMaximized(!isTypeMaximized)}
+          >
+            {isTypeMaximized ? (
+              <Minimize2 className="h-4 w-4" />
+            ) : (
+              <Maximize2 className="h-4 w-4" />
+            )}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {typeLoading ? (
+            <div className="h-[400px] flex items-center justify-center">
+              Loading document type data...
+            </div>
+          ) : (
+            <div
+              className={
+                isTypeMaximized ? "h-[calc(100vh-200px)]" : "h-[400px]"
+              }
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={typeData}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="type" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar
+                    dataKey="approved"
+                    stackId="a"
+                    fill="#4ade80"
+                    name="Approved"
+                  />
+                  <Bar
+                    dataKey="pending"
+                    stackId="a"
+                    fill="#fbbf24"
+                    name="Pending"
+                  />
+                  <Bar
+                    dataKey="rejected"
+                    stackId="a"
+                    fill="#ef4444"
+                    name="Rejected"
+                  />
+                  <Bar
+                    dataKey="needsReview"
+                    stackId="a"
+                    fill="#60a5fa"
+                    name="Needs Review"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Department Statistics Cards */}
       {!deptLoading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
           {deptData.map((dept) => (
@@ -310,6 +426,52 @@ export default function ReportsPage() {
                     <dt>Needs Review:</dt>
                     <dd className="text-blue-600 font-semibold">
                       {dept.needsReview}
+                    </dd>
+                  </div>
+                </dl>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Document Type Statistics Cards */}
+      {!typeLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+          {typeData.map((type) => (
+            <Card key={type.typeId}>
+              <CardHeader>
+                <CardTitle className="text-lg">{type.type}</CardTitle>
+                <CardDescription>Document Type Statistics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <dl className="space-y-2">
+                  <div className="flex justify-between">
+                    <dt>Total Documents:</dt>
+                    <dd className="font-semibold">{type.total}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt>Approved:</dt>
+                    <dd className="text-green-600 font-semibold">
+                      {type.approved}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt>Pending:</dt>
+                    <dd className="text-yellow-600 font-semibold">
+                      {type.pending}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt>Rejected:</dt>
+                    <dd className="text-red-600 font-semibold">
+                      {type.rejected}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt>Needs Review:</dt>
+                    <dd className="text-blue-600 font-semibold">
+                      {type.needsReview}
                     </dd>
                   </div>
                 </dl>

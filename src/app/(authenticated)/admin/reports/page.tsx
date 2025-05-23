@@ -30,12 +30,32 @@ type ReportStats = {
   };
 };
 
+type DocumentTypeStats = {
+  type: string;
+  typeId: string;
+  site: string;
+  siteId: string;
+  total: number;
+  approved: number;
+  pending: number;
+  rejected: number;
+  needsReview: number;
+};
+
+type DocumentTypeResponse = {
+  byType: DocumentTypeStats[];
+  bySite: Record<string, DocumentTypeStats[]>;
+};
+
 export default function ReportsPage() {
   const [stats, setStats] = useState<ReportStats | null>(null);
+  const [typeStats, setTypeStats] = useState<DocumentTypeResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [typeLoading, setTypeLoading] = useState(true);
 
   useEffect(() => {
     fetchStats();
+    fetchTypeStats();
   }, []);
 
   const fetchStats = async () => {
@@ -50,7 +70,21 @@ export default function ReportsPage() {
     }
   };
 
-  if (loading) {
+  const fetchTypeStats = async () => {
+    try {
+      const response = await fetch(
+        "/api/admin/reports/documents-by-type-admin"
+      );
+      const data = await response.json();
+      setTypeStats(data);
+    } catch (error) {
+      console.error("Failed to fetch document type stats:", error);
+    } finally {
+      setTypeLoading(false);
+    }
+  };
+
+  if (loading || typeLoading) {
     return <div className="container mx-auto p-6">Loading...</div>;
   }
 
@@ -156,6 +190,61 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Document Type Statistics */}
+      {typeStats && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-4">Document Types by Site</h2>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Object.entries(typeStats.bySite).map(([siteName, types]) => (
+              <Card key={siteName}>
+                <CardHeader>
+                  <CardTitle>{siteName}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <dl className="space-y-4">
+                    {types.map((type) => (
+                      <div key={type.typeId} className="border-t pt-2">
+                        <div className="font-medium">{type.type}</div>
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1">
+                          <div className="text-sm text-muted-foreground">
+                            Total:
+                          </div>
+                          <div className="text-sm text-right">{type.total}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Approved:
+                          </div>
+                          <div className="text-sm text-right text-green-600">
+                            {type.approved}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Pending:
+                          </div>
+                          <div className="text-sm text-right text-yellow-600">
+                            {type.pending}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Rejected:
+                          </div>
+                          <div className="text-sm text-right text-red-600">
+                            {type.rejected}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Needs Review:
+                          </div>
+                          <div className="text-sm text-right text-blue-600">
+                            {type.needsReview}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </dl>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
