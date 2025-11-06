@@ -6,9 +6,10 @@ import { authOptions } from "@/lib/auth";
 // PATCH /api/admin/users/[id]/update-site - Update a user's site
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
 
     // Check if user is authenticated and is an admin
@@ -37,7 +38,7 @@ export async function PATCH(
 
     // Check if user exists
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     if (!user) {
@@ -47,7 +48,7 @@ export async function PATCH(
     // Update the user's site
     const updatedUser = await prisma.user.update({
       where: {
-        id: params.id,
+        id: id,
       },
       data: {
         siteId,

@@ -5,9 +5,10 @@ import { authOptions } from "@/lib/auth";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -15,7 +16,7 @@ export async function GET(
 
     const department = await prisma.department.findUnique({
       where: {
-        id: params.id,
+        id: id,
       },
       select: {
         id: true,

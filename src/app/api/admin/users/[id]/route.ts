@@ -10,9 +10,10 @@ export const dynamic = "force-dynamic";
 // PATCH /api/admin/users/[id] - Update user
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "ADMIN") {
@@ -24,7 +25,7 @@ export async function PATCH(
 
     // Get the current user to check if role is changing from PENDING
     const currentUser = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       select: { role: true, email: true, siteId: true },
     });
 
@@ -93,7 +94,7 @@ export async function PATCH(
     }
 
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData,
       select: {
         id: true,
@@ -138,9 +139,10 @@ export async function PATCH(
 // DELETE /api/admin/users/[id] - Delete user
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "ADMIN") {
@@ -148,7 +150,7 @@ export async function DELETE(
     }
 
     await prisma.user.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     return new NextResponse(null, { status: 204 });

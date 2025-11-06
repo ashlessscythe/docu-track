@@ -8,9 +8,10 @@ export const dynamic = "force-dynamic";
 // PATCH /api/admin/document-types/[id] - Update document type
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "ADMIN") {
@@ -31,7 +32,7 @@ export async function PATCH(
       where: {
         name,
         NOT: {
-          id: params.id,
+          id: id,
         },
       },
     });
@@ -50,7 +51,7 @@ export async function PATCH(
     };
 
     const documentType = await prisma.documentType.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         name,
         description: JSON.stringify(descriptionData),
@@ -76,9 +77,10 @@ export async function PATCH(
 // DELETE /api/admin/document-types/[id] - Delete document type
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
 
     if (!session || session.user.role !== "ADMIN") {
@@ -87,7 +89,7 @@ export async function DELETE(
 
     // Check if there are any documents using this type
     const documentsUsingType = await prisma.document.findFirst({
-      where: { typeId: params.id },
+      where: { typeId: id },
     });
 
     if (documentsUsingType) {
@@ -98,7 +100,7 @@ export async function DELETE(
     }
 
     await prisma.documentType.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     return new NextResponse(null, { status: 204 });

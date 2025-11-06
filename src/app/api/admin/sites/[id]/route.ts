@@ -6,9 +6,10 @@ import { authOptions } from "@/lib/auth";
 // GET /api/admin/sites/[id] - Get a specific site
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
 
     // Check if user is authenticated and is an admin
@@ -18,7 +19,7 @@ export async function GET(
 
     const site = await prisma.site.findUnique({
       where: {
-        id: params.id,
+        id: id,
       },
     });
 
@@ -39,9 +40,10 @@ export async function GET(
 // PATCH /api/admin/sites/[id] - Update a site
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
 
     // Check if user is authenticated and is an admin
@@ -67,7 +69,7 @@ export async function PATCH(
           mode: "insensitive", // Case insensitive comparison
         },
         id: {
-          not: params.id,
+          not: id,
         },
       },
     });
@@ -82,7 +84,7 @@ export async function PATCH(
     // Update the site
     const updatedSite = await prisma.site.update({
       where: {
-        id: params.id,
+        id: id,
       },
       data: {
         name,
@@ -103,9 +105,10 @@ export async function PATCH(
 // DELETE /api/admin/sites/[id] - Delete a site
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
 
     // Check if user is authenticated and is an admin
@@ -116,7 +119,7 @@ export async function DELETE(
     // Check if this is the default site
     const site = await prisma.site.findUnique({
       where: {
-        id: params.id,
+        id: id,
       },
     });
 
@@ -126,12 +129,12 @@ export async function DELETE(
 
     // Check if there are any associated records
     const associatedRecords = await Promise.all([
-      prisma.user.count({ where: { siteId: params.id } }),
-      prisma.department.count({ where: { siteId: params.id } }),
-      prisma.documentType.count({ where: { siteId: params.id } }),
-      prisma.document.count({ where: { siteId: params.id } }),
-      prisma.template.count({ where: { siteId: params.id } }),
-      prisma.feedback.count({ where: { siteId: params.id } }),
+      prisma.user.count({ where: { siteId: id } }),
+      prisma.department.count({ where: { siteId: id } }),
+      prisma.documentType.count({ where: { siteId: id } }),
+      prisma.document.count({ where: { siteId: id } }),
+      prisma.template.count({ where: { siteId: id } }),
+      prisma.feedback.count({ where: { siteId: id } }),
     ]);
 
     const totalAssociatedRecords = associatedRecords.reduce(
@@ -152,7 +155,7 @@ export async function DELETE(
     // Delete the site
     await prisma.site.delete({
       where: {
-        id: params.id,
+        id: id,
       },
     });
 

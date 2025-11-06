@@ -22,7 +22,7 @@ async function createSystemComment(
 
 async function handleStatusUpdate(
   request: Request,
-  { params }: { params: { id: string } }
+  documentId: string
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -35,7 +35,6 @@ async function handleStatusUpdate(
       return new NextResponse("Forbidden", { status: 403 });
     }
 
-    const documentId = params.id;
     if (!documentId) {
       return new NextResponse("Document ID is required", { status: 400 });
     }
@@ -156,14 +155,16 @@ async function handleStatusUpdate(
 // Support both PATCH and PUT methods
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  return handleStatusUpdate(request, { params });
+  const { id } = await params;
+  return handleStatusUpdate(request, id);
 }
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  return handleStatusUpdate(request, { params });
+  const { id } = await params;
+  return handleStatusUpdate(request, id);
 }

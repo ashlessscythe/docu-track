@@ -5,9 +5,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -17,7 +18,7 @@ export async function GET(
     // First check if user has access to this document
     const document = await prisma.document.findUnique({
       where: {
-        id: params.id,
+        id: id,
       },
       select: {
         submitterId: true,
@@ -50,7 +51,7 @@ export async function GET(
     // If user has access, get the document content
     const documentWithContent = await prisma.document.findUnique({
       where: {
-        id: params.id,
+        id: id,
       },
       select: {
         content: true,

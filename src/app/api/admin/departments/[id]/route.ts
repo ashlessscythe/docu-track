@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // PATCH /api/admin/departments/[id] - Update department
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -17,6 +17,7 @@ export async function PATCH(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    const { id } = await params;
     const body = await request.json();
     const { name, description, siteId } = body;
 
@@ -26,7 +27,7 @@ export async function PATCH(
 
     // Get the current department to check its site
     const currentDepartment = await prisma.department.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!currentDepartment) {
@@ -53,7 +54,7 @@ export async function PATCH(
         name,
         siteId: departmentSiteId,
         NOT: {
-          id: params.id,
+          id,
         },
       },
     });
@@ -68,7 +69,7 @@ export async function PATCH(
     }
 
     const department = await prisma.department.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         description,
@@ -94,7 +95,7 @@ export async function PATCH(
 // DELETE /api/admin/departments/[id] - Delete department
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -103,9 +104,11 @@ export async function DELETE(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    const { id } = await params;
+
     // Check if there are any users in this department
     const usersInDepartment = await prisma.user.findFirst({
-      where: { departmentId: params.id },
+      where: { departmentId: id },
     });
 
     if (usersInDepartment) {
@@ -117,7 +120,7 @@ export async function DELETE(
 
     // Check if there are any documents in this department
     const documentsInDepartment = await prisma.document.findFirst({
-      where: { departmentId: params.id },
+      where: { departmentId: id },
     });
 
     if (documentsInDepartment) {
@@ -129,7 +132,7 @@ export async function DELETE(
 
     // Check if there are any templates in this department
     const templatesInDepartment = await prisma.template.findFirst({
-      where: { departmentId: params.id },
+      where: { departmentId: id },
     });
 
     if (templatesInDepartment) {
@@ -140,7 +143,7 @@ export async function DELETE(
     }
 
     await prisma.department.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return new NextResponse(null, { status: 204 });

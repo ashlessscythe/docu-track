@@ -5,9 +5,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -17,7 +18,7 @@ export async function DELETE(
     // First try to find the document
     const document = await prisma.document.findUnique({
       where: {
-        id: params.id,
+        id: id,
       },
     });
 
@@ -40,14 +41,14 @@ export async function DELETE(
       // Delete all comments associated with the document
       await tx.comment.deleteMany({
         where: {
-          documentId: params.id,
+          documentId: id,
         },
       });
 
       // Delete the document
       await tx.document.delete({
         where: {
-          id: params.id,
+          id: id,
         },
       });
     });
@@ -61,9 +62,10 @@ export async function DELETE(
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -76,7 +78,7 @@ export async function PUT(
     // First find the document
     const document = await prisma.document.findUnique({
       where: {
-        id: params.id,
+        id: id,
       },
     });
 
@@ -107,7 +109,7 @@ export async function PUT(
 
     const updatedDocument = await prisma.document.update({
       where: {
-        id: params.id,
+        id: id,
       },
       data: {
         name: originalFilename, // Update the name to the new file's name

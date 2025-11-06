@@ -6,9 +6,10 @@ import { authOptions } from "@/lib/auth";
 // GET /api/admin/sites/[id]/users - Get all users for a specific site
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
 
     // Check if user is authenticated and is an admin
@@ -16,7 +17,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const siteId = params.id;
+    const siteId = id;
 
     // Check if site exists
     const site = await prisma.site.findUnique({

@@ -10,16 +10,17 @@ const DEFAULT_SITE_ID = "default-site-id";
 // GET /api/admin/templates/[id] - Get a specific template
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const template = await prisma.template.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         department: true,
         type: true,
@@ -46,16 +47,17 @@ export async function GET(
 // DELETE /api/admin/templates/[id] - Delete a template
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     await prisma.template.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     return NextResponse.json({ message: "Template deleted successfully" });
@@ -71,9 +73,10 @@ export async function DELETE(
 // PUT /api/admin/templates/[id] - Update a template
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -107,7 +110,7 @@ export async function PUT(
     };
 
     const templateData = await prisma.template.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData,
       include: {
         department: true,

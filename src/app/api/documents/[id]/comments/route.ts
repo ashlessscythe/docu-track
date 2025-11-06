@@ -45,16 +45,17 @@ async function checkDocumentAccess(documentId: string, session: any) {
 // GET /api/documents/[id]/comments
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     // Check if user has access to the document
-    const hasAccess = await checkDocumentAccess(params.id, session);
+    const hasAccess = await checkDocumentAccess(id, session);
     if (!hasAccess) {
       return new NextResponse(
         "Forbidden - You don't have access to this document",
@@ -64,7 +65,7 @@ export async function GET(
 
     const comments = await prisma.comment.findMany({
       where: {
-        documentId: params.id,
+        documentId: id,
       },
       include: {
         user: {
@@ -89,16 +90,17 @@ export async function GET(
 // POST /api/documents/[id]/comments
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     // Check if user has access to the document
-    const hasAccess = await checkDocumentAccess(params.id, session);
+    const hasAccess = await checkDocumentAccess(id, session);
     if (!hasAccess) {
       return new NextResponse(
         "Forbidden - You don't have access to this document",
@@ -128,7 +130,7 @@ export async function POST(
     const comment = await prisma.comment.create({
       data: {
         content,
-        documentId: params.id,
+        documentId: id,
         userId: user.id,
       },
       include: {

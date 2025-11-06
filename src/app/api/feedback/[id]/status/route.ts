@@ -6,9 +6,10 @@ import { FeedbackStatus } from "@prisma/client";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
+  const { id } = await params;
+try {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
@@ -20,7 +21,7 @@ export async function PATCH(
       return new NextResponse("Forbidden", { status: 403 });
     }
 
-    const feedbackId = params.id;
+    const feedbackId = id;
     if (!feedbackId) {
       return new NextResponse("Feedback ID is required", { status: 400 });
     }
