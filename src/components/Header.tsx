@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useTheme } from "./theme-provider";
 import { Button } from "./ui/button";
-import { Palette, Moon, Sun, Flame, Leaf, Droplet } from "lucide-react";
+import { Palette, Moon, Sun, Flame, Leaf, Droplet, Zap, Sparkles } from "lucide-react";
 import { FeedbackDialog } from "./FeedbackDialog";
 import {
   DropdownMenu,
@@ -30,6 +30,10 @@ export function Header() {
         return <Leaf className="h-5 w-5" />;
       case "seafoam":
         return <Droplet className="h-5 w-5" />;
+      case "cyberpunk":
+        return <Zap className="h-5 w-5" />;
+      case "neon":
+        return <Sparkles className="h-5 w-5" />;
       default:
         return <Palette className="h-5 w-5" />;
     }
@@ -153,6 +157,14 @@ export function Header() {
                 <DropdownMenuItem onClick={() => setTheme("seafoam")}>
                   <Droplet className="mr-2 h-4 w-4" />
                   <span>Seafoam</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("cyberpunk")}>
+                  <Zap className="mr-2 h-4 w-4" />
+                  <span>Cyberpunk</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("neon")}>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  <span>Neon</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -3,8 +3,8 @@
 import * as React from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 
-// Updated Theme type to include only 5 visually distinct themes
-type Theme = "light" | "dark" | "crimson" | "mint" | "seafoam" | "system";
+// Updated Theme type with extreme, visually distinct themes
+type Theme = "light" | "dark" | "crimson" | "mint" | "seafoam" | "cyberpunk" | "neon" | "system";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -33,7 +33,7 @@ export function ThemeProvider({
     const root = window.document.documentElement;
 
     // Remove all possible theme classes
-    root.classList.remove("light", "dark", "crimson", "mint", "seafoam");
+    root.classList.remove("light", "dark", "crimson", "mint", "seafoam", "cyberpunk", "neon");
 
     if (theme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")

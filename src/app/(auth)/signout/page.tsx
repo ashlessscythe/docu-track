@@ -5,7 +5,12 @@ import { signOut } from "next-auth/react";
 
 export default function SignOutPage() {
   useEffect(() => {
-    signOut({ callbackUrl: "/signin" });
+    // Sign out without callbackUrl - NextAuth will use default behavior
+    // Then redirect client-side to honor the current origin (127.0.0.1, localhost, etc.)
+    signOut({ redirect: false }).then(() => {
+      // Client-side redirect using current origin - safe and honors address bar
+      window.location.href = `${window.location.origin}/signin`;
+    });
   }, []);
 
   return (

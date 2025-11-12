@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
-import { Palette, Moon, Sun, Flame, Leaf, Droplet } from "lucide-react";
+import { Palette, Moon, Sun, Flame, Leaf, Droplet, Zap, Sparkles } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +32,10 @@ export function LandingHeader({ session, appName }: LandingHeaderProps) {
         return <Leaf className="h-5 w-5" />;
       case "seafoam":
         return <Droplet className="h-5 w-5" />;
+      case "cyberpunk":
+        return <Zap className="h-5 w-5" />;
+      case "neon":
+        return <Sparkles className="h-5 w-5" />;
       default:
         return <Palette className="h-5 w-5" />;
     }
@@ -73,6 +77,14 @@ export function LandingHeader({ session, appName }: LandingHeaderProps) {
               <DropdownMenuItem onClick={() => setTheme("seafoam")}>
                 <Droplet className="mr-2 h-4 w-4" />
                 <span>Seafoam</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("cyberpunk")}>
+                <Zap className="mr-2 h-4 w-4" />
+                <span>Cyberpunk</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("neon")}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                <span>Neon</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -195,6 +195,26 @@ export const authOptions: NextAuthOptions = {
         },
       } as ExtendedSession;
     },
+    // Industry standard: Use default NextAuth redirect behavior
+    // This validates against NEXTAUTH_URL to prevent open redirect vulnerabilities
+    // For 127.0.0.1 vs localhost, handle redirect client-side after signout
+    async redirect({ url, baseUrl }) {
+      // Only allow relative URLs or URLs on the same origin as NEXTAUTH_URL
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`;
+      }
+      // Validate absolute URLs are on same origin
+      try {
+        const urlObj = new URL(url);
+        if (urlObj.origin === new URL(baseUrl).origin) {
+          return url;
+        }
+      } catch {
+        // Invalid URL
+      }
+      // Default to trusted baseUrl (NEXTAUTH_URL)
+      return baseUrl;
+    },
   },
   events: {
     async signOut({ token }) {
