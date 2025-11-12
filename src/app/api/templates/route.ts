@@ -16,6 +16,14 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Block PENDING users from accessing templates
+    if (session.user.role === "PENDING") {
+      return new NextResponse(
+        "Access denied. Your account is pending approval.",
+        { status: 403 }
+      );
+    }
+
     // Get user's site ID, default to null if not set
     const siteId = session.user.siteId || null;
 

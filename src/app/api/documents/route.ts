@@ -17,6 +17,14 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Block PENDING users from accessing documents
+    if (session.user.role === "PENDING") {
+      return new NextResponse(
+        "Access denied. Your account is pending approval.",
+        { status: 403 }
+      );
+    }
+
     // Get user's site ID, default to null if not set
     const siteId = session.user.siteId || null;
 
@@ -77,6 +85,14 @@ export async function POST(req: Request) {
 
     if (!session || !session.user) {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // Block PENDING users from creating documents
+    if (session.user.role === "PENDING") {
+      return new NextResponse(
+        "Access denied. Your account is pending approval. You cannot create documents until your account is approved.",
+        { status: 403 }
+      );
     }
 
     // Get user's site ID, default to null if not set
@@ -145,7 +161,7 @@ export async function POST(req: Request) {
         name: originalFilename,
         typeId,
         description,
-        departmentId: session.user.role === "PENDING" ? null : departmentId,
+        departmentId: departmentId || null,
         status: DocumentStatus.PENDING,
         content: buffer,
         mimeType: file.type,

@@ -15,6 +15,14 @@ try {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Block PENDING users from downloading documents
+    if (session.user.role === "PENDING") {
+      return new NextResponse(
+        "Access denied. Your account is pending approval.",
+        { status: 403 }
+      );
+    }
+
     // First check if user has access to this document
     const document = await prisma.document.findUnique({
       where: {

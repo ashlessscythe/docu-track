@@ -6,11 +6,17 @@ import { z } from "zod";
 import { sendAdminNewUserEmail, sendWelcomeEmail } from "@/lib/email";
 import { config } from "@/src/lib/config";
 
-// Validation schema
+// Validation schema with stronger password requirements
 const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-  name: z.string().min(1),
+  email: z.string().email("Invalid email address"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+    ),
+  name: z.string().min(1, "Name is required"),
 });
 
 export async function POST(req: Request) {
@@ -23,22 +29,47 @@ export async function POST(req: Request) {
     const result = registerSchema.safeParse(body);
     if (!result.success) {
       console.error("Validation error:", result.error);
+      
+      // Extract field-specific errors
+      const fieldErrors: Record<string, string> = {};
+      result.error.errors.forEach((err) => {
+        const field = err.path[0] as string;
+        if (field && !fieldErrors[field]) {
+          fieldErrors[field] = err.message;
+        }
+      });
+
+      // Return specific error messages
       return NextResponse.json(
-        { error: "Invalid input", details: result.error.errors },
+        { 
+          error: "Validation failed",
+          fieldErrors,
+          // Also include a general message for the first error
+          message: result.error.errors[0]?.message || "Please check your input"
+        },
         { status: 400 }
       );
     }
 
     const { email, password, name } = result.data;
 
+    // Normalize email to lowercase for consistent storage
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "User already exists" },
+        { 
+          error: "Email already registered",
+          fieldErrors: {
+            email: "An account with this email already exists. Please sign in or use a different email."
+          },
+          message: "An account with this email already exists"
+        },
         { status: 400 }
       );
     }
@@ -55,17 +86,17 @@ export async function POST(req: Request) {
         },
       }));
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password with higher cost factor for better security
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
+    // Create user with PENDING role - they must be approved by admin
     const user = await prisma.user.create({
       data: {
-        email,
-        name,
+        email: normalizedEmail,
+        name: name.trim(),
         password: hashedPassword,
-        role: UserRole.PENDING,
-        departmentId: null,
+        role: UserRole.PENDING, // All new users start as PENDING
+        departmentId: null, // No department assigned until approved
         siteId: defaultSite.id, // Assign default site
       },
     });
@@ -110,7 +141,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       user: userData,
-      message: "Registration successful",
+      message: "Registration successful. Your account is pending approval. Please contact an administrator to activate your account.",
     });
   } catch (error) {
     console.error("[REGISTER_ERROR]", error);

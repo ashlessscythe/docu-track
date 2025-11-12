@@ -56,17 +56,38 @@ export default function RegisterPage() {
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Registration failed");
+        // Handle field-specific errors
+        if (data.fieldErrors) {
+          setErrors(data.fieldErrors);
+        }
+        // Handle general error message
+        if (data.message) {
+          setErrors((prev) => ({
+            ...prev,
+            general: data.message,
+          }));
+        } else {
+          setErrors((prev) => ({
+            ...prev,
+            general: data.error || "Registration failed",
+          }));
+        }
+        return;
       }
 
+      // Show success message before redirecting
+      setErrors({});
+      alert(data.message || "Registration successful! Please contact an administrator to activate your account.");
+      
       // Redirect to signin page after successful registration
       router.push("/signin");
     } catch (error) {
       setErrors((prev) => ({
         ...prev,
-        general: error instanceof Error ? error.message : "Registration failed",
+        general: error instanceof Error ? error.message : "Registration failed. Please try again.",
       }));
     }
   }
@@ -160,6 +181,9 @@ export default function RegisterPage() {
                 className="relative block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 placeholder="Password"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Must be at least 8 characters with uppercase, lowercase, and a number
+              </p>
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
               )}

@@ -12,6 +12,14 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Block PENDING users from accessing their documents
+    if (session.user.role === "PENDING") {
+      return new NextResponse(
+        "Access denied. Your account is pending approval.",
+        { status: 403 }
+      );
+    }
+
     const documents = await prisma.document.findMany({
       where: {
         submitter: {

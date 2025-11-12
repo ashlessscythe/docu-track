@@ -14,6 +14,14 @@ export async function GET(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Block PENDING users from accessing feedback
+    if (session.user.role === "PENDING") {
+      return new NextResponse(
+        "Access denied. Your account is pending approval.",
+        { status: 403 }
+      );
+    }
+
     // Get user's site ID, default to null if not set
     const siteId = session.user.siteId || null;
 
@@ -97,6 +105,14 @@ export async function POST(req: Request) {
 
     if (!session || !session.user) {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // Block PENDING users from submitting feedback
+    if (session.user.role === "PENDING") {
+      return new NextResponse(
+        "Access denied. Your account is pending approval.",
+        { status: 403 }
+      );
     }
 
     // Get user's site ID, default to null if not set
