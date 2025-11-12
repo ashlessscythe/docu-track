@@ -371,10 +371,10 @@ async function main() {
     await prisma.comment.deleteMany();
     await prisma.document.deleteMany();
     await prisma.template.deleteMany();
+    await prisma.feedback.deleteMany(); // Must delete before users due to foreign key constraint
     await prisma.user.deleteMany();
     await prisma.department.deleteMany();
     await prisma.documentType.deleteMany();
-    await prisma.feedback.deleteMany();
     // Don't delete the site as we'll need it
   } else if (!isDbEmpty) {
     console.log("Database already contains data. Running in idempotent mode.");
@@ -386,8 +386,10 @@ async function main() {
   let departments = [];
   let departmentIds = [];
 
-  if (departmentCount === 0) {
-    // Create departments if none exist
+  // After clearing, always create departments, otherwise check if they exist
+  const actualDepartmentCount = await prisma.department.count();
+  if (args.clear || actualDepartmentCount === 0) {
+    // Create departments if none exist or if we just cleared
     departments = await Promise.all(
       defaultDepartments.map((dept) => prisma.department.create({ data: dept }))
     );
@@ -403,8 +405,10 @@ async function main() {
   let documentTypes = [];
   let documentTypeIds = [];
 
-  if (documentTypeCount === 0) {
-    // Create document types if none exist
+  // After clearing, always create document types, otherwise check if they exist
+  const actualDocumentTypeCount = await prisma.documentType.count();
+  if (args.clear || actualDocumentTypeCount === 0) {
+    // Create document types if none exist or if we just cleared
     documentTypes = await Promise.all(
       defaultDocumentTypes.map((type) =>
         prisma.documentType.create({ data: type })
@@ -510,18 +514,60 @@ async function main() {
         // Get all users including existing ones for document creation
         const allUsers = await prisma.user.findMany();
         const approvers = allUsers.filter(
-          (user) => user.role === UserRole.APPROVER
+          (user) =>
+            user.role === UserRole.APPROVER || user.role === UserRole.ADMIN
+        );
+        const submitters = allUsers.filter(
+          (user) =>
+            user.role === UserRole.SUBMITTER || user.role === UserRole.PENDING
         );
 
-        // Create documents and randomly assign approvers for some documents
-        await Promise.all(
-          allUsers
-            .filter(
-              (user) =>
-                user.role === UserRole.SUBMITTER ||
-                user.role === UserRole.PENDING
-            )
-            .flatMap((user) =>
+        // If count is explicitly provided, create exactly that many documents
+        if (countExplicitlyProvided && args.count > 0) {
+          console.log(
+            `Creating ${args.count} documents with various statuses...`
+          );
+
+          // Ensure we have at least one submitter
+          if (submitters.length === 0) {
+            console.log("No submitters found, creating a submitter user...");
+            const submitterData = await createFakeUser(departmentIds);
+            const newSubmitter = await prisma.user.create({
+              data: submitterData,
+            });
+            submitters.push(newSubmitter);
+          }
+
+          // Create documents with various statuses
+          const documentsToCreate = Array.from(
+            { length: args.count },
+            async () => {
+              const submitter = faker.helpers.arrayElement(submitters);
+              const documentData = createFakeDocument(
+                submitter.id,
+                departmentIds,
+                documentTypeIds
+              );
+              // Randomly assign an approver to some documents
+              if (approvers.length > 0 && Math.random() > 0.5) {
+                const approver = faker.helpers.arrayElement(approvers);
+                return await prisma.document.create({
+                  data: {
+                    ...documentData,
+                    approverId: approver.id,
+                  },
+                });
+              }
+              return await prisma.document.create({ data: documentData });
+            }
+          );
+
+          await Promise.all(documentsToCreate);
+          console.log(`Created ${args.count} documents successfully.`);
+        } else {
+          // Create documents and randomly assign approvers for some documents
+          await Promise.all(
+            submitters.flatMap((user) =>
               Array.from(
                 { length: Math.floor(Math.random() * 5) + 1 },
                 async () => {
@@ -544,7 +590,8 @@ async function main() {
                 }
               )
             )
-        );
+          );
+        }
 
         // Create additional fake templates
         console.log("Creating fake templates...");
@@ -605,8 +652,90 @@ async function main() {
         })
       );
 
-      // Only create sample documents if none exist
-      if (existingDocumentCount === 0 && users.length > 0) {
+      // Get all users for document creation
+      const allUsers = await prisma.user.findMany();
+      const submitters = allUsers.filter(
+        (user) =>
+          user.role === UserRole.SUBMITTER || user.role === UserRole.PENDING
+      );
+      const approvers = allUsers.filter(
+        (user) =>
+          user.role === UserRole.APPROVER || user.role === UserRole.ADMIN
+      );
+
+      // If count is explicitly provided, create that many documents with various statuses
+      if (countExplicitlyProvided && args.count > 0) {
+        console.log(
+          `Creating ${args.count} documents with various statuses...`
+        );
+
+        // Ensure we have at least one submitter
+        if (submitters.length === 0) {
+          console.log("No submitters found, creating a submitter user...");
+          const submitterData = {
+            email: `submitter${Date.now()}@example.com`,
+            name: "Test Submitter",
+            role: UserRole.SUBMITTER,
+            password: await hashPassword("submitterpass"),
+            departmentId: departmentIds.length > 0 ? departmentIds[0] : null,
+            siteId: DEFAULT_SITE_ID,
+          };
+          const newSubmitter = await prisma.user.create({
+            data: submitterData,
+          });
+          submitters.push(newSubmitter);
+        }
+
+        // Create documents with various statuses
+        const documentsToCreate = Array.from({ length: args.count }, (_, i) => {
+          const submitter = submitters[i % submitters.length];
+          const statuses = [
+            DocumentStatus.PENDING,
+            DocumentStatus.APPROVED,
+            DocumentStatus.REJECTED,
+            DocumentStatus.NEEDS_REVIEW,
+          ];
+          const status = statuses[i % statuses.length]; // Cycle through statuses
+          const documentType = documentTypes[i % documentTypes.length];
+          const department =
+            departmentIds.length > 0
+              ? departmentIds[i % departmentIds.length]
+              : null;
+          const approver =
+            approvers.length > 0 && Math.random() > 0.3
+              ? approvers[i % approvers.length]
+              : null;
+
+          const fileTypes = [
+            { ext: "pdf", mime: "application/pdf" },
+            {
+              ext: "docx",
+              mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            },
+            { ext: "txt", mime: "text/plain" },
+          ];
+          const fileType = fileTypes[i % fileTypes.length];
+
+          return prisma.document.create({
+            data: {
+              name: `Document ${i + 1}.${fileType.ext}`,
+              typeId: documentType.id,
+              description: `Sample document ${i + 1} with status ${status}`,
+              departmentId: department,
+              status,
+              content: Buffer.from(`Document ${i + 1} content`),
+              mimeType: fileType.mime,
+              submitterId: submitter.id,
+              approverId: approver?.id || null,
+              siteId: DEFAULT_SITE_ID,
+            },
+          });
+        });
+
+        await Promise.all(documentsToCreate);
+        console.log(`Created ${args.count} documents successfully.`);
+      } else if (existingDocumentCount === 0 && users.length > 0) {
+        // Only create sample documents if none exist and count not specified
         // Create some default documents with random statuses
         await Promise.all([
           prisma.document.create({
@@ -644,8 +773,14 @@ async function main() {
             },
           }),
         ]);
+      }
 
-        // Create some default feedback entries
+      // Create some default feedback entries if not using count
+      if (
+        !countExplicitlyProvided &&
+        existingDocumentCount === 0 &&
+        users.length > 0
+      ) {
         console.log("Creating default feedback entries...");
         await Promise.all([
           prisma.feedback.create({
@@ -660,7 +795,7 @@ async function main() {
           prisma.feedback.create({
             data: {
               content: "Would be nice to have a dark mode option.",
-              userId: users[1].id,
+              userId: users[1]?.id || users[0].id,
               siteId: DEFAULT_SITE_ID,
               status: FeedbackStatus.REVIEWED,
             },
@@ -668,7 +803,7 @@ async function main() {
           prisma.feedback.create({
             data: {
               content: "The approval process is very streamlined, great job!",
-              userId: users[2].id,
+              userId: users[2]?.id || users[0].id,
               siteId: DEFAULT_SITE_ID,
               status: FeedbackStatus.RESOLVED,
             },

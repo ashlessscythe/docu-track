@@ -474,178 +474,184 @@ export default function ApproverPage() {
       ) : (
         <div className="space-y-4">
           {/* Desktop Table View */}
-          <div className="hidden md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead
-                    className="w-[200px] font-semibold cursor-pointer"
-                    onClick={() => handleSort("name")}
-                  >
-                    <div className="flex items-center">
-                      Name
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                      {sortConfig.key === "name" && (
-                        <span className="ml-1 text-xs">
-                          {sortConfig.direction === "asc" ? "↑" : "↓"}
-                        </span>
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead
-                    className="w-[120px] font-semibold cursor-pointer"
-                    onClick={() => handleSort("type")}
-                  >
-                    <div className="flex items-center">
-                      Type
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                      {sortConfig.key === "type" && (
-                        <span className="ml-1 text-xs">
-                          {sortConfig.direction === "asc" ? "↑" : "↓"}
-                        </span>
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead
-                    className="w-[140px] font-semibold cursor-pointer"
-                    onClick={() => handleSort("submitter")}
-                  >
-                    <div className="flex items-center">
-                      Submitter
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                      {sortConfig.key === "submitter" && (
-                        <span className="ml-1 text-xs">
-                          {sortConfig.direction === "asc" ? "↑" : "↓"}
-                        </span>
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead
-                    className="w-[120px] font-semibold cursor-pointer"
-                    onClick={() => handleSort("status")}
-                  >
-                    <div className="flex items-center">
-                      Status
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                      {sortConfig.key === "status" && (
-                        <span className="ml-1 text-xs">
-                          {sortConfig.direction === "asc" ? "↑" : "↓"}
-                        </span>
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead
-                    className="w-[120px] font-semibold cursor-pointer"
-                    onClick={() => handleSort("createdAt")}
-                  >
-                    <div className="flex items-center">
-                      Submitted
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                      {sortConfig.key === "createdAt" && (
-                        <span className="ml-1 text-xs">
-                          {sortConfig.direction === "asc" ? "↑" : "↓"}
-                        </span>
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead className="w-[100px] text-right font-semibold">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredDocuments.map((doc) => (
-                  <TableRow
-                    key={doc.id}
-                    className="hover:bg-muted/50 transition-colors"
-                  >
-                    <TableCell className="font-medium">{doc.name}</TableCell>
-                    <TableCell>{doc.type.name}</TableCell>
-                    <TableCell>{doc.submitter.name}</TableCell>
-                    <TableCell>
-                      <span className={getStatusColor(doc.status)}>
-                        {formatStatus(doc.status)}
-                      </span>
-                    </TableCell>
-                    <TableCell>{formatDate(doc.createdAt)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDocumentClick(doc)}
-                      >
-                        {doc.status === "PENDING" ? "Actions" : "View"}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredDocuments.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="h-24 text-center text-muted-foreground"
+          <div className="hidden md:block border rounded-lg overflow-hidden">
+            <div className="max-h-[calc(100vh-400px)] overflow-y-auto">
+              <Table>
+                <TableHeader className="sticky top-0 z-10 bg-background">
+                  <TableRow className="border-b">
+                    <TableHead
+                      className="w-[200px] font-semibold cursor-pointer bg-background"
+                      onClick={() => handleSort("name")}
                     >
-                      No documents match your filters
-                    </TableCell>
+                      <div className="flex items-center">
+                        Name
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        {sortConfig.key === "name" && (
+                          <span className="ml-1 text-xs">
+                            {sortConfig.direction === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="w-[120px] font-semibold cursor-pointer bg-background"
+                      onClick={() => handleSort("type")}
+                    >
+                      <div className="flex items-center">
+                        Type
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        {sortConfig.key === "type" && (
+                          <span className="ml-1 text-xs">
+                            {sortConfig.direction === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="w-[140px] font-semibold cursor-pointer bg-background"
+                      onClick={() => handleSort("submitter")}
+                    >
+                      <div className="flex items-center">
+                        Submitter
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        {sortConfig.key === "submitter" && (
+                          <span className="ml-1 text-xs">
+                            {sortConfig.direction === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="w-[120px] font-semibold cursor-pointer bg-background"
+                      onClick={() => handleSort("status")}
+                    >
+                      <div className="flex items-center">
+                        Status
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        {sortConfig.key === "status" && (
+                          <span className="ml-1 text-xs">
+                            {sortConfig.direction === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="w-[120px] font-semibold cursor-pointer bg-background"
+                      onClick={() => handleSort("createdAt")}
+                    >
+                      <div className="flex items-center">
+                        Submitted
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        {sortConfig.key === "createdAt" && (
+                          <span className="ml-1 text-xs">
+                            {sortConfig.direction === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </div>
+                    </TableHead>
+                    <TableHead className="w-[100px] text-right font-semibold bg-background">
+                      Actions
+                    </TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredDocuments.map((doc) => (
+                    <TableRow
+                      key={doc.id}
+                      className="hover:bg-muted/50 transition-colors"
+                    >
+                      <TableCell className="font-medium">{doc.name}</TableCell>
+                      <TableCell>{doc.type.name}</TableCell>
+                      <TableCell>{doc.submitter.name}</TableCell>
+                      <TableCell>
+                        <span className={getStatusColor(doc.status)}>
+                          {formatStatus(doc.status)}
+                        </span>
+                      </TableCell>
+                      <TableCell>{formatDate(doc.createdAt)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDocumentClick(doc)}
+                        >
+                          {doc.status === "PENDING" ? "Actions" : "View"}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredDocuments.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="h-24 text-center text-muted-foreground"
+                      >
+                        No documents match your filters
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           {/* Mobile Card View */}
-          <div className="grid grid-cols-1 gap-4 md:hidden">
-            {filteredDocuments.map((doc) => (
-              <Card key={doc.id} className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{doc.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <div className="text-sm text-muted-foreground">Type</div>
-                    <div className="text-sm font-medium">{doc.type.name}</div>
-                  </div>
-                  <div className="flex justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Submitter
+          <div className="md:hidden">
+            <div className="max-h-[calc(100vh-350px)] overflow-y-auto space-y-4">
+              {filteredDocuments.map((doc) => (
+                <Card key={doc.id} className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">{doc.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between">
+                      <div className="text-sm text-muted-foreground">Type</div>
+                      <div className="text-sm font-medium">{doc.type.name}</div>
                     </div>
-                    <div className="text-sm font-medium">
-                      {doc.submitter.name}
+                    <div className="flex justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        Submitter
+                      </div>
+                      <div className="text-sm font-medium">
+                        {doc.submitter.name}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex justify-between">
-                    <div className="text-sm text-muted-foreground">Status</div>
-                    <div className="text-sm">
-                      <span className={getStatusColor(doc.status)}>
-                        {formatStatus(doc.status)}
-                      </span>
+                    <div className="flex justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        Status
+                      </div>
+                      <div className="text-sm">
+                        <span className={getStatusColor(doc.status)}>
+                          {formatStatus(doc.status)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Submitted
+                    <div className="flex justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        Submitted
+                      </div>
+                      <div className="text-sm font-medium">
+                        {formatDate(doc.createdAt)}
+                      </div>
                     </div>
-                    <div className="text-sm font-medium">
-                      {formatDate(doc.createdAt)}
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => handleDocumentClick(doc)}
-                  >
-                    {doc.status === "PENDING" ? "Actions" : "View"}
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-            {filteredDocuments.length === 0 && (
-              <div className="text-center p-8 border rounded-lg bg-muted/10 text-muted-foreground">
-                No documents match your filters
-              </div>
-            )}
+                  </CardContent>
+                  <CardFooter>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => handleDocumentClick(doc)}
+                    >
+                      {doc.status === "PENDING" ? "Actions" : "View"}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+              {filteredDocuments.length === 0 && (
+                <div className="text-center p-8 border rounded-lg bg-muted/10 text-muted-foreground">
+                  No documents match your filters
+                </div>
+              )}
+            </div>
           </div>
 
           {selectedDoc && viewDialogOpen && (

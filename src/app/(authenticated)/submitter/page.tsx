@@ -205,133 +205,137 @@ export default function SubmitterPage() {
       ) : (
         <div className="space-y-4">
           {/* Desktop Table View */}
-          <div className="hidden md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[200px] font-semibold">
-                    Name
-                  </TableHead>
-                  <TableHead className="w-[120px] font-semibold">
-                    Type
-                  </TableHead>
-                  <TableHead className="w-[140px] font-semibold">
-                    Department
-                  </TableHead>
-                  <TableHead className="w-[120px] font-semibold">
-                    Status
-                  </TableHead>
-                  <TableHead className="w-[120px] font-semibold">
-                    Submitted
-                  </TableHead>
-                  <TableHead className="w-[80px] text-right font-semibold">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {documents.map((doc) => (
-                  <TableRow
-                    key={doc.id}
-                    className="hover:bg-muted/50 transition-colors"
-                  >
-                    <TableCell className="font-medium">{doc.name}</TableCell>
-                    <TableCell>{doc.type.name}</TableCell>
-                    <TableCell>{doc.department?.name ?? "Pending"}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`inline-block ${getStatusColor(doc.status)}`}
-                      >
-                        {formatStatus(doc.status)}
-                      </span>
-                    </TableCell>
-                    <TableCell>{formatDate(doc.createdAt)}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedDoc(doc);
-                          setViewDialogOpen(true);
-                        }}
-                      >
-                        View
-                      </Button>
-                    </TableCell>
+          <div className="hidden md:block border rounded-lg overflow-hidden">
+            <div className="max-h-[calc(100vh-350px)] overflow-y-auto">
+              <Table>
+                <TableHeader className="sticky top-0 z-10 bg-background">
+                  <TableRow className="border-b">
+                    <TableHead className="w-[200px] font-semibold bg-background">
+                      Name
+                    </TableHead>
+                    <TableHead className="w-[120px] font-semibold bg-background">
+                      Type
+                    </TableHead>
+                    <TableHead className="w-[140px] font-semibold bg-background">
+                      Department
+                    </TableHead>
+                    <TableHead className="w-[120px] font-semibold bg-background">
+                      Status
+                    </TableHead>
+                    <TableHead className="w-[120px] font-semibold bg-background">
+                      Submitted
+                    </TableHead>
+                    <TableHead className="w-[80px] text-right font-semibold bg-background">
+                      Actions
+                    </TableHead>
                   </TableRow>
-                ))}
-                {documents.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="h-24 text-center text-muted-foreground"
+                </TableHeader>
+                <TableBody>
+                  {documents.map((doc) => (
+                    <TableRow
+                      key={doc.id}
+                      className="hover:bg-muted/50 transition-colors"
                     >
-                      No documents submitted yet
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                      <TableCell className="font-medium">{doc.name}</TableCell>
+                      <TableCell>{doc.type.name}</TableCell>
+                      <TableCell>{doc.department?.name ?? "Pending"}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`inline-block ${getStatusColor(doc.status)}`}
+                        >
+                          {formatStatus(doc.status)}
+                        </span>
+                      </TableCell>
+                      <TableCell>{formatDate(doc.createdAt)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedDoc(doc);
+                            setViewDialogOpen(true);
+                          }}
+                        >
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {documents.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="h-24 text-center text-muted-foreground"
+                      >
+                        No documents submitted yet
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
 
           {/* Mobile Card View */}
-          <div className="grid grid-cols-1 gap-4 md:hidden">
-            {documents.map((doc) => (
-              <Card key={doc.id} className="overflow-hidden">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{doc.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
-                    <div className="text-sm text-muted-foreground">Type</div>
-                    <div className="text-sm font-medium">{doc.type.name}</div>
-                  </div>
-                  <div className="flex justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Department
+          <div className="md:hidden">
+            <div className="max-h-[calc(100vh-300px)] overflow-y-auto space-y-4">
+              {documents.map((doc) => (
+                <Card key={doc.id} className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">{doc.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between">
+                      <div className="text-sm text-muted-foreground">Type</div>
+                      <div className="text-sm font-medium">{doc.type.name}</div>
                     </div>
-                    <div className="text-sm font-medium">
-                      {doc.department?.name ?? "Pending"}
+                    <div className="flex justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        Department
+                      </div>
+                      <div className="text-sm font-medium">
+                        {doc.department?.name ?? "Pending"}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex justify-between">
-                    <div className="text-sm text-muted-foreground">Status</div>
-                    <div className="text-sm">
-                      <span
-                        className={`inline-block ${getStatusColor(doc.status)}`}
-                      >
-                        {formatStatus(doc.status)}
-                      </span>
+                    <div className="flex justify-between">
+                      <div className="text-sm text-muted-foreground">Status</div>
+                      <div className="text-sm">
+                        <span
+                          className={`inline-block ${getStatusColor(doc.status)}`}
+                        >
+                          {formatStatus(doc.status)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Submitted
+                    <div className="flex justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        Submitted
+                      </div>
+                      <div className="text-sm font-medium">
+                        {formatDate(doc.createdAt)}
+                      </div>
                     </div>
-                    <div className="text-sm font-medium">
-                      {formatDate(doc.createdAt)}
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => {
-                      setSelectedDoc(doc);
-                      setViewDialogOpen(true);
-                    }}
-                  >
-                    View
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-            {documents.length === 0 && (
-              <div className="text-center p-8 border rounded-lg bg-muted/10 text-muted-foreground">
-                No documents submitted yet
-              </div>
-            )}
+                  </CardContent>
+                  <CardFooter>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setSelectedDoc(doc);
+                        setViewDialogOpen(true);
+                      }}
+                    >
+                      View
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+              {documents.length === 0 && (
+                <div className="text-center p-8 border rounded-lg bg-muted/10 text-muted-foreground">
+                  No documents submitted yet
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
