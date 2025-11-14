@@ -31,6 +31,11 @@ A powerful admin dashboard provides comprehensive control over documents, users,
   - Admin access to all documents
   - Approve/Reject/Review actions
   - Document status tracking
+- 🛡️ Cloudflare Turnstile protection on registration
+  - Prevents automated bot registrations
+  - Privacy-focused alternative to traditional CAPTCHAs
+  - Seamless user experience with invisible or interactive challenges
+  - Configurable via `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` environment variables
 - 🔒 JWT versioning for secure deployments
   - Force re-authentication after system updates
   - Configurable via JWT_VERSION environment variable
@@ -45,9 +50,34 @@ A powerful admin dashboard provides comprehensive control over documents, users,
 - **Database:** PostgreSQL (Neon.tech)
 - **ORM:** Prisma
 - **Authentication:** NextAuth.js
+- **Bot Protection:** Cloudflare Turnstile
 - **UI Components:** shadcn/ui
 - **Styling:** Tailwind CSS
 - **Testing:** Jest & React Testing Library
+
+## Security Features
+
+### Cloudflare Turnstile
+
+DocuTrack uses Cloudflare Turnstile to protect the registration endpoint from automated bot attacks. Turnstile is a privacy-focused alternative to traditional CAPTCHAs that:
+
+- **Prevents bot registrations**: Automatically blocks automated signup attempts
+- **Privacy-friendly**: No tracking cookies or personal data collection
+- **User-friendly**: Provides a seamless experience with invisible challenges for most users
+- **Free to use**: No cost for reasonable usage volumes
+
+To enable Turnstile protection:
+
+1. Sign up for a Cloudflare account (if you don't have one)
+2. Navigate to [Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile) in your Cloudflare dashboard
+3. Create a new site and get your Site Key and Secret Key
+4. Add them to your `.env` file:
+   ```
+   NEXT_PUBLIC_TURNSTILE_SITE_KEY=your-site-key-here
+   TURNSTILE_SECRET_KEY=your-secret-key-here
+   ```
+
+If Turnstile keys are not configured, the registration endpoint will work without bot protection. This allows for development and testing without requiring Cloudflare credentials.
 
 ## Getting Started
 
@@ -70,7 +100,11 @@ A powerful admin dashboard provides comprehensive control over documents, users,
    cp .env.example .env
    ```
 
-   Fill in your environment variables in the `.env` file. Make sure to set the `JWT_VERSION` to control authentication versioning.
+   Fill in your environment variables in the `.env` file. Make sure to set:
+   - `JWT_VERSION` to control authentication versioning
+   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` for bot protection on registration
+     - Get your keys from [Cloudflare Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile)
+     - Turnstile is optional - if keys are not provided, registration will work without bot protection
 
 4. Set up the database:
 

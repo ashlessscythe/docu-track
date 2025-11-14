@@ -17,7 +17,42 @@ const registerSchema = z.object({
       "Password must contain at least one uppercase letter, one lowercase letter, and one number"
     ),
   name: z.string().min(1, "Name is required"),
+  turnstileToken: z.string().optional(),
 });
+
+/**
+ * Verify Turnstile token with Cloudflare
+ */
+async function verifyTurnstileToken(token: string): Promise<boolean> {
+  const secretKey = process.env.TURNSTILE_SECRET_KEY;
+  
+  // If Turnstile is not configured, skip verification
+  if (!secretKey) {
+    return true;
+  }
+
+  try {
+    const response = await fetch(
+      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          secret: secretKey,
+          response: token,
+        }),
+      }
+    );
+
+    const data = await response.json();
+    return data.success === true;
+  } catch (error) {
+    console.error("Turnstile verification error:", error);
+    return false;
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -51,7 +86,31 @@ export async function POST(req: Request) {
       );
     }
 
-    const { email, password, name } = result.data;
+    const { email, password, name, turnstileToken } = result.data;
+
+    // Verify Turnstile token if provided
+    if (process.env.TURNSTILE_SECRET_KEY) {
+      if (!turnstileToken) {
+        return NextResponse.json(
+          {
+            error: "Security verification required",
+            message: "Please complete the security verification",
+          },
+          { status: 400 }
+        );
+      }
+
+      const isValidToken = await verifyTurnstileToken(turnstileToken);
+      if (!isValidToken) {
+        return NextResponse.json(
+          {
+            error: "Security verification failed",
+            message: "Security verification failed. Please try again.",
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     // Normalize email to lowercase for consistent storage
     const normalizedEmail = email.toLowerCase().trim();

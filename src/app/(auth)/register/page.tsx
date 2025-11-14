@@ -2,17 +2,71 @@
 
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useRef, useEffect } from "react";
 import Link from "next/link";
+
+declare global {
+  interface Window {
+    turnstile: {
+      render: (
+        element: HTMLElement,
+        options: {
+          sitekey: string;
+          callback: (token: string) => void;
+          "error-callback": () => void;
+        }
+      ) => string;
+      reset: (widgetId: string) => void;
+      remove: (widgetId: string) => void;
+    };
+  }
+}
 
 export default function RegisterPage() {
   const router = useRouter();
+  const turnstileRef = useRef<HTMLDivElement>(null);
+  const turnstileWidgetIdRef = useRef<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
     name?: string;
     general?: string;
   }>({});
+
+  // Load Turnstile script
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+      if (turnstileRef.current && siteKey) {
+        const widgetId = window.turnstile.render(turnstileRef.current, {
+          sitekey: siteKey,
+          callback: (token: string) => {
+            setTurnstileToken(token);
+          },
+          "error-callback": () => {
+            setTurnstileToken(null);
+          },
+        });
+        turnstileWidgetIdRef.current = widgetId;
+      }
+    };
+
+    return () => {
+      if (turnstileWidgetIdRef.current) {
+        window.turnstile?.remove(turnstileWidgetIdRef.current);
+      }
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, []);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,6 +97,14 @@ export default function RegisterPage() {
       return;
     }
 
+    // Check for Turnstile token
+    if (!turnstileToken) {
+      setErrors({
+        general: "Please complete the security verification",
+      });
+      return;
+    }
+
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -53,12 +115,18 @@ export default function RegisterPage() {
           email,
           password,
           name,
+          turnstileToken,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        // Reset Turnstile on error
+        if (turnstileWidgetIdRef.current) {
+          window.turnstile?.reset(turnstileWidgetIdRef.current);
+          setTurnstileToken(null);
+        }
         // Handle field-specific errors
         if (data.fieldErrors) {
           setErrors(data.fieldErrors);
@@ -80,14 +148,20 @@ export default function RegisterPage() {
 
       // Show success message before redirecting
       setErrors({});
-      alert(data.message || "Registration successful! Please contact an administrator to activate your account.");
-      
+      alert(
+        data.message ||
+          "Registration successful! Please contact an administrator to activate your account."
+      );
+
       // Redirect to signin page after successful registration
       router.push("/signin");
     } catch (error) {
       setErrors((prev) => ({
         ...prev,
-        general: error instanceof Error ? error.message : "Registration failed. Please try again.",
+        general:
+          error instanceof Error
+            ? error.message
+            : "Registration failed. Please try again.",
       }));
     }
   }
@@ -182,7 +256,8 @@ export default function RegisterPage() {
                 placeholder="Password"
               />
               <p className="mt-1 text-xs text-gray-500">
-                Must be at least 8 characters with uppercase, lowercase, and a number
+                Must be at least 8 characters with uppercase, lowercase, and a
+                number
               </p>
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
@@ -191,7 +266,16 @@ export default function RegisterPage() {
           </div>
 
           <div className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full">
+            {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+              <div ref={turnstileRef} className="flex justify-center" />
+            )}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={
+                !turnstileToken && !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+              }
+            >
               Register
             </Button>
             <p className="text-center text-sm text-gray-600">
