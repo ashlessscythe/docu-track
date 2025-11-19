@@ -28,10 +28,10 @@ export const NewUserAdminNotificationEmail: React.FC<
 > = ({ userName, userEmail, appName, dashboardUrl }) => {
   return (
     <Html>
-      <Head />
-      <Preview>New user registration on {appName}</Preview>
       <Tailwind>
+        <Head />
         <Body className="bg-white my-auto mx-auto font-sans">
+          <Preview>New user registration on {appName}</Preview>
           <Container className="border border-solid border-[#eaeaea] rounded my-[40px] mx-auto p-[20px] w-[465px]">
             <Section className="mt-[32px]">
               <Img

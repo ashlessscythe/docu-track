@@ -97,6 +97,16 @@ export default function AdminDashboard() {
             <Button className="w-full">Manage Feedback</Button>
           </Link>
         </Card>
+
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Test Email Templates</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Send test emails to preview email templates
+          </p>
+          <Link href="/admin/test-emails">
+            <Button className="w-full">Test Emails</Button>
+          </Link>
+        </Card>
       </div>
     </div>
   );

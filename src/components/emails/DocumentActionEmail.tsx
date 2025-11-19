@@ -88,8 +88,8 @@ export const DocumentActionEmail: React.FC<
 
   return (
     <Html>
-      <Head />
       <Tailwind>
+        <Head />
         <Body className="bg-gray-50 my-auto mx-auto font-sans">
           <Preview>{config.previewText}</Preview>
           <Container className="border border-solid border-gray-200 rounded-lg my-[40px] mx-auto p-[20px] max-w-[465px] bg-white shadow-sm">
@@ -147,7 +147,7 @@ export const DocumentActionEmail: React.FC<
 
             <Section className="text-center mt-[32px] mb-[32px]">
               <Button
-                className="bg-blue-600 hover:bg-blue-700 rounded-md text-white text-[14px] font-semibold no-underline text-center px-6 py-3 transition-colors"
+                className="bg-blue-600 rounded-md text-white text-[14px] font-semibold no-underline text-center px-6 py-3"
                 href={dashboardUrl}
               >
                 {config.buttonText}

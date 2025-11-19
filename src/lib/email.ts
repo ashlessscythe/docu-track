@@ -3,24 +3,175 @@ import { WelcomeEmail } from "@/components/emails/WelcomeEmail";
 import { PasswordResetEmail } from "@/components/emails/PasswordResetEmail";
 import { AccountApprovalEmail } from "@/components/emails/AccountApprovalEmail";
 import { DocumentActionEmail } from "@/components/emails/DocumentActionEmail";
+import { NewUserAdminNotificationEmail } from "@/components/emails/NewUserAdminNotificationEmail";
 import { User, Document, DocumentStatus, Comment } from "@prisma/client";
 import { config } from "@/lib/config";
 
 // Initialize Resend with API key
 const resend = new Resend(process.env.RESEND_API_KEY);
-const fromEmail = `${process.env.NEXT_PUBLIC_APP_NAME} <noreply@${process.env.EMAIL_FROM_DOMAIN}>`;
+const fromEmail = `${process.env.NEXT_PUBLIC_APP_NAME} <notifications@${process.env.EMAIL_FROM_DOMAIN}>`;
 const appName = config.appName;
+
+// Helper function to generate plain text version of welcome email
+function getWelcomeEmailText(
+  name: string,
+  appName: string,
+  baseUrl?: string
+): string {
+  return `Welcome to ${appName}!
+
+Hello ${name},
+
+Thank you for joining ${appName}. We're excited to have you on board!
+
+Your account is currently pending approval. You will receive an email notification once your account has been approved.
+
+With ${appName}, you can:
+- Easily manage document submissions
+- Track approval processes
+- Collaborate with your team
+
+${baseUrl ? `Get started: ${baseUrl}/dashboard` : ""}
+
+If you have any questions or need assistance, please don't hesitate to contact our support team.
+
+© ${new Date().getFullYear()} ${appName}. All rights reserved.`;
+}
+
+// Helper function to generate plain text version of password reset email
+function getPasswordResetEmailText(
+  name: string,
+  appName: string,
+  resetLink: string
+): string {
+  return `Reset Your ${appName} Password
+
+Hello ${name},
+
+We received a request to reset your password for your ${appName} account. If you didn't make this request, you can safely ignore this email.
+
+To reset your password, please click the link below:
+${resetLink}
+
+This link will expire in 1 hour for security reasons.
+
+If you didn't request a password reset, please contact our support team immediately.
+
+© ${new Date().getFullYear()} ${appName}. All rights reserved.`;
+}
+
+// Helper function to generate plain text version of account approval email
+function getAccountApprovalEmailText(
+  name: string,
+  appName: string,
+  role: string,
+  baseUrl?: string
+): string {
+  const roleDisplay =
+    role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+  return `Your ${appName} Account Has Been Approved
+
+Hello ${name},
+
+Great news! Your account on ${appName} has been approved.
+
+Your account has been assigned the ${roleDisplay} role. You can now access all features available to your role.
+
+${baseUrl ? `Go to Dashboard: ${baseUrl}/dashboard` : ""}
+
+If you have any questions or need assistance, please don't hesitate to contact our support team.
+
+© ${new Date().getFullYear()} ${appName}. All rights reserved.`;
+}
+
+// Helper function to generate plain text version of admin new user notification email
+function getAdminNewUserEmailText(
+  userName: string,
+  userEmail: string,
+  appName: string,
+  dashboardUrl: string
+): string {
+  return `New User Registration on ${appName}
+
+Hello Admin,
+
+A new user has registered on ${appName} and is awaiting approval:
+
+Name: ${userName}
+Email: ${userEmail}
+
+Please review this registration and take appropriate action.
+
+Go to Admin Dashboard: ${dashboardUrl}
+
+This is an automated message from ${appName}. Please do not reply to this email.`;
+}
+
+// Helper function to generate plain text version of document action email
+function getDocumentActionEmailText(
+  recipientName: string,
+  documentName: string,
+  documentType: string,
+  departmentName: string | undefined,
+  appName: string,
+  actionType: "APPROVED" | "REJECTED" | "NEEDS_REVIEW",
+  actionByName: string,
+  comments: { content: string; userName: string }[],
+  dashboardUrl: string
+): string {
+  const actionConfig = {
+    APPROVED: {
+      heading: "Document Approved!",
+      message: `Great news! Your document "${documentName}" has been approved by ${actionByName}.`,
+    },
+    REJECTED: {
+      heading: "Document Rejected",
+      message: `Your document "${documentName}" has been rejected by ${actionByName}. Please review the comments below for more information.`,
+    },
+    NEEDS_REVIEW: {
+      heading: "Document Needs Review",
+      message: `Your document "${documentName}" requires additional review as requested by ${actionByName}. Please check the comments below for details.`,
+    },
+  }[actionType];
+
+  let text = `${actionConfig.heading}
+
+Hello ${recipientName},
+
+${actionConfig.message}
+
+Document Details:
+Type: ${documentType}${departmentName ? `\nDepartment: ${departmentName}` : ""}
+`;
+
+  if (comments.length > 0) {
+    text += "\nComments:\n";
+    comments.forEach((comment) => {
+      text += `${comment.userName}: ${comment.content}\n`;
+    });
+  }
+
+  text += `\nView Document: ${dashboardUrl}
+
+If you have any questions or need assistance, please don't hesitate to contact our support team.
+
+© ${new Date().getFullYear()} ${appName}. All rights reserved.`;
+
+  return text;
+}
 
 /**
  * Send a welcome email to a new user
  */
 export async function sendWelcomeEmail(user: User) {
   try {
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: user.email,
       subject: `Welcome to ${appName}!`,
       react: WelcomeEmail({ name: user.name, appName }),
+      text: getWelcomeEmailText(user.name, appName, baseUrl),
     });
 
     if (error) {
@@ -34,8 +185,6 @@ export async function sendWelcomeEmail(user: User) {
     return { success: false, error };
   }
 }
-
-import { NewUserAdminNotificationEmail } from "@/components/emails/NewUserAdminNotificationEmail";
 
 /**
  * Send a notification email to all admins when a new user registers
@@ -70,6 +219,12 @@ export async function sendAdminNewUserEmail(
         appName,
         dashboardUrl,
       }),
+      text: getAdminNewUserEmailText(
+        newUser.name,
+        newUser.email,
+        appName,
+        dashboardUrl
+      ),
     });
 
     if (error) {
@@ -107,6 +262,7 @@ export async function sendPasswordResetEmail(
         appName,
         resetLink,
       }),
+      text: getPasswordResetEmailText(user.name, appName, resetLink),
     });
 
     if (error) {
@@ -126,6 +282,7 @@ export async function sendPasswordResetEmail(
  */
 export async function sendAccountApprovalEmail(user: User) {
   try {
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: user.email,
@@ -135,6 +292,7 @@ export async function sendAccountApprovalEmail(user: User) {
         appName,
         role: user.role,
       }),
+      text: getAccountApprovalEmailText(user.name, appName, user.role, baseUrl),
     });
 
     if (error) {
@@ -209,6 +367,17 @@ export async function sendDocumentActionEmail(
         comments: formattedComments,
         dashboardUrl,
       }),
+      text: getDocumentActionEmailText(
+        document.submitter.name,
+        document.name,
+        document.type.name,
+        document.department?.name,
+        appName,
+        actionType,
+        actionByUser.name,
+        formattedComments,
+        dashboardUrl
+      ),
     });
 
     if (error) {
