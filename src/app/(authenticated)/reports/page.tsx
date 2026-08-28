@@ -29,6 +29,15 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Maximize2, Minimize2 } from "lucide-react";
+import { KpiCard } from "@/components/reports/kpi-card";
+import { StatusDistributionChart } from "@/components/reports/status-distribution-chart";
+import { ApprovalRateChart } from "@/components/reports/approval-rate-chart";
+import { MonthlyTrendChart } from "@/components/reports/monthly-trend-chart";
+import {
+  STATUS_COLORS,
+  STATUS_API_COLORS,
+  generateMonthOptions,
+} from "@/components/reports/chart-colors";
 
 interface DocumentStats {
   department: string | null;
@@ -58,10 +67,72 @@ interface DailyStats {
   NEEDS_REVIEW: number;
 }
 
+interface ExecutiveSummary {
+  kpis: {
+    totalDocuments: number;
+    approvalRate: number;
+    rejectionRate: number;
+    activeBacklog: number;
+    avgProcessingDays: number | null;
+    momChange: {
+      submissions: number;
+      approvalRate: number;
+    };
+  };
+  statusDistribution: {
+    status: string;
+    count: number;
+    percentage: number;
+  }[];
+  approvalRateByDepartment: {
+    department: string;
+    rate: number;
+    total: number;
+  }[];
+  monthlyTrends: {
+    month: string;
+    submissions: number;
+    approvalRate: number;
+  }[];
+}
+
+function BreakdownTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: { name: string; value: number; color: string }[];
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+
+  const total = payload.reduce((sum, entry) => sum + entry.value, 0);
+
+  return (
+    <div className="rounded-lg border bg-background p-3 shadow-md">
+      <p className="font-medium mb-2">{label}</p>
+      {payload.map((entry) => {
+        const pct =
+          total > 0 ? ((entry.value / total) * 100).toFixed(1) : "0.0";
+        return (
+          <p key={entry.name} className="text-sm" style={{ color: entry.color }}>
+            {entry.name}: {entry.value} ({pct}%)
+          </p>
+        );
+      })}
+      <p className="text-sm font-medium mt-2 border-t pt-2">Total: {total}</p>
+    </div>
+  );
+}
+
 export default function ReportsPage() {
+  const [executiveSummary, setExecutiveSummary] =
+    React.useState<ExecutiveSummary | null>(null);
   const [deptData, setDeptData] = React.useState<DocumentStats[]>([]);
   const [typeData, setTypeData] = React.useState<DocumentTypeStats[]>([]);
   const [monthlyData, setMonthlyData] = React.useState<DailyStats[]>([]);
+  const [summaryLoading, setSummaryLoading] = React.useState(true);
   const [deptLoading, setDeptLoading] = React.useState(true);
   const [typeLoading, setTypeLoading] = React.useState(true);
   const [monthlyLoading, setMonthlyLoading] = React.useState(true);
@@ -70,13 +141,28 @@ export default function ReportsPage() {
   const [isTypeMaximized, setIsTypeMaximized] = React.useState(false);
   const [selectedMonth, setSelectedMonth] = React.useState(() => {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}`;
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
 
-  // Fetch department data only on initial load
+  const months = React.useMemo(() => generateMonthOptions(24), []);
+
+  React.useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        setSummaryLoading(true);
+        const response = await fetch("/api/admin/reports/executive-summary");
+        if (!response.ok) throw new Error("Failed to fetch executive summary");
+        const data = await response.json();
+        setExecutiveSummary(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setSummaryLoading(false);
+      }
+    };
+    fetchSummary();
+  }, []);
+
   React.useEffect(() => {
     const fetchDeptData = async () => {
       try {
@@ -96,7 +182,6 @@ export default function ReportsPage() {
     fetchDeptData();
   }, []);
 
-  // Fetch document type data only on initial load
   React.useEffect(() => {
     const fetchTypeData = async () => {
       try {
@@ -114,7 +199,6 @@ export default function ReportsPage() {
     fetchTypeData();
   }, []);
 
-  // Fetch monthly data when month changes
   React.useEffect(() => {
     const fetchMonthlyData = async () => {
       try {
@@ -137,20 +221,193 @@ export default function ReportsPage() {
 
   if (error) return <div>Error: {error}</div>;
 
-  const months = Array.from({ length: 12 }, (_, i) => {
-    const date = new Date(2024, i, 1);
-    return {
-      value: `2024-${String(i + 1).padStart(2, "0")}`,
-      label: date.toLocaleString("default", { month: "long" }),
-    };
-  });
+  const kpis = executiveSummary?.kpis;
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-4xl font-bold mb-8">Document Analytics</h1>
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold">Executive Dashboard</h1>
+        <p className="text-muted-foreground mt-2">
+          Document workflow performance at a glance
+        </p>
+      </div>
 
+      {/* Executive KPI Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <KpiCard
+          title="Total Documents"
+          value={kpis?.totalDocuments ?? 0}
+          trend={kpis?.momChange.submissions}
+          trendLabel="submissions vs last month"
+          loading={summaryLoading}
+        />
+        <KpiCard
+          title="Approval Rate"
+          value={kpis ? `${kpis.approvalRate.toFixed(1)}%` : "0%"}
+          trend={kpis?.momChange.approvalRate}
+          trendLabel="vs last month"
+          trendIsPoints
+          loading={summaryLoading}
+        />
+        <KpiCard
+          title="Active Backlog"
+          value={kpis?.activeBacklog ?? 0}
+          description="Pending + needs review"
+          loading={summaryLoading}
+        />
+        <KpiCard
+          title="Avg Processing Time"
+          value={
+            kpis?.avgProcessingDays != null
+              ? `${kpis.avgProcessingDays} days`
+              : "N/A"
+          }
+          description="For approved documents"
+          loading={summaryLoading}
+        />
+      </div>
+
+      {/* Performance Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Status Distribution</CardTitle>
+            <CardDescription>
+              Current document status breakdown
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {summaryLoading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                Loading...
+              </div>
+            ) : (
+              <StatusDistributionChart
+                data={executiveSummary?.statusDistribution ?? []}
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Approval Rate by Department</CardTitle>
+            <CardDescription>
+              Sorted by rate — highlights bottlenecks
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {summaryLoading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                Loading...
+              </div>
+            ) : (
+              <ApprovalRateChart
+                data={executiveSummary?.approvalRateByDepartment ?? []}
+              />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 6-Month Trend */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>6-Month Trend</CardTitle>
+          <CardDescription>
+            Submission volume and approval rate over time
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {summaryLoading ? (
+            <div className="h-[350px] flex items-center justify-center">
+              Loading trend data...
+            </div>
+          ) : (
+            <MonthlyTrendChart
+              data={executiveSummary?.monthlyTrends ?? []}
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Daily Drill-Down */}
+      <Card className="mb-8">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Daily Activity</CardTitle>
+            <CardDescription>
+              Daily document submissions and their statuses
+            </CardDescription>
+          </div>
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-[200px] text-foreground bg-background border border-border shadow-lg rounded-md">
+              <SelectValue placeholder="Select month" />
+            </SelectTrigger>
+            <SelectContent className="border border-border text-foreground bg-background shadow-sm rounded-md">
+              {months.map((month) => (
+                <SelectItem key={month.value} value={month.value}>
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardHeader>
+        <CardContent>
+          {monthlyLoading ? (
+            <div className="h-[400px] flex items-center justify-center">
+              Loading daily data...
+            </div>
+          ) : monthlyData.every((d) => d.total === 0) ? (
+            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+              No documents submitted in this period
+            </div>
+          ) : (
+            <div className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={monthlyData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="day" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="APPROVED"
+                    stroke={STATUS_API_COLORS.APPROVED}
+                    name="Approved"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="PENDING"
+                    stroke={STATUS_API_COLORS.PENDING}
+                    name="Pending"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="REJECTED"
+                    stroke={STATUS_API_COLORS.REJECTED}
+                    name="Rejected"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="NEEDS_REVIEW"
+                    stroke={STATUS_API_COLORS.NEEDS_REVIEW}
+                    name="Needs Review"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Documents by Department */}
       <Card
-        className={isDeptMaximized ? "fixed inset-4 z-50 overflow-auto" : ""}
+        className={`mb-8 ${isDeptMaximized ? "fixed inset-4 z-50 overflow-auto" : ""}`}
       >
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -176,6 +433,10 @@ export default function ReportsPage() {
             <div className="h-[400px] flex items-center justify-center">
               Loading department data...
             </div>
+          ) : deptData.length === 0 ? (
+            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+              No department data available
+            </div>
           ) : (
             <div
               className={
@@ -184,13 +445,8 @@ export default function ReportsPage() {
             >
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={deptData}
-                  margin={{
-                    top: 20,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
+                  data={deptData.map((d) => ({ ...d, total: d.total }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
@@ -200,30 +456,30 @@ export default function ReportsPage() {
                     }
                   />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip content={<BreakdownTooltip />} />
                   <Legend />
                   <Bar
                     dataKey="approved"
                     stackId="a"
-                    fill="#4ade80"
+                    fill={STATUS_COLORS.approved}
                     name="Approved"
                   />
                   <Bar
                     dataKey="pending"
                     stackId="a"
-                    fill="#fbbf24"
+                    fill={STATUS_COLORS.pending}
                     name="Pending"
                   />
                   <Bar
                     dataKey="rejected"
                     stackId="a"
-                    fill="#ef4444"
+                    fill={STATUS_COLORS.rejected}
                     name="Rejected"
                   />
                   <Bar
                     dataKey="needsReview"
                     stackId="a"
-                    fill="#60a5fa"
+                    fill={STATUS_COLORS.needsReview}
                     name="Needs Review"
                   />
                 </BarChart>
@@ -233,83 +489,9 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
-      <Card className="mt-8">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Monthly Document Activity</CardTitle>
-            <CardDescription>
-              Daily document submissions and their statuses
-            </CardDescription>
-          </div>
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-[180px] text-foreground bg-background border border-border shadow-lg rounded-md">
-              <SelectValue placeholder="Select month" />
-            </SelectTrigger>
-            <SelectContent className="border border-border text-foreground bg-background shadow-sm rounded-md">
-              {months.map((month) => (
-                <SelectItem key={month.value} value={month.value}>
-                  {month.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardHeader>
-        <CardContent>
-          {monthlyLoading ? (
-            <div className="h-[400px] flex items-center justify-center">
-              Loading monthly data...
-            </div>
-          ) : (
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={monthlyData}
-                  margin={{
-                    top: 20,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="APPROVED"
-                    stroke="#4ade80"
-                    name="Approved"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="PENDING"
-                    stroke="#fbbf24"
-                    name="Pending"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="REJECTED"
-                    stroke="#ef4444"
-                    name="Rejected"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="NEEDS_REVIEW"
-                    stroke="#60a5fa"
-                    name="Needs Review"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* New Card for Document Type Breakdown */}
+      {/* Documents by Type */}
       <Card
-        className={`mt-8 ${isTypeMaximized ? "fixed inset-4 z-50 overflow-auto" : ""}`}
+        className={isTypeMaximized ? "fixed inset-4 z-50 overflow-auto" : ""}
       >
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -335,6 +517,10 @@ export default function ReportsPage() {
             <div className="h-[400px] flex items-center justify-center">
               Loading document type data...
             </div>
+          ) : typeData.length === 0 ? (
+            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+              No document type data available
+            </div>
           ) : (
             <div
               className={
@@ -343,41 +529,36 @@ export default function ReportsPage() {
             >
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={typeData}
-                  margin={{
-                    top: 20,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
+                  data={typeData.map((d) => ({ ...d, total: d.total }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="type" />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip content={<BreakdownTooltip />} />
                   <Legend />
                   <Bar
                     dataKey="approved"
                     stackId="a"
-                    fill="#4ade80"
+                    fill={STATUS_COLORS.approved}
                     name="Approved"
                   />
                   <Bar
                     dataKey="pending"
                     stackId="a"
-                    fill="#fbbf24"
+                    fill={STATUS_COLORS.pending}
                     name="Pending"
                   />
                   <Bar
                     dataKey="rejected"
                     stackId="a"
-                    fill="#ef4444"
+                    fill={STATUS_COLORS.rejected}
                     name="Rejected"
                   />
                   <Bar
                     dataKey="needsReview"
                     stackId="a"
-                    fill="#60a5fa"
+                    fill={STATUS_COLORS.needsReview}
                     name="Needs Review"
                   />
                 </BarChart>
@@ -386,100 +567,6 @@ export default function ReportsPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Department Statistics Cards */}
-      {!deptLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-          {deptData.map((dept) => (
-            <Card key={dept.department ?? "global"}>
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  {dept.department ?? "Global (No dept)"}
-                </CardTitle>
-                <CardDescription>Document Statistics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <dl className="space-y-2">
-                  <div className="flex justify-between">
-                    <dt>Total Documents:</dt>
-                    <dd className="font-semibold">{dept.total}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt>Approved:</dt>
-                    <dd className="text-green-600 font-semibold">
-                      {dept.approved}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt>Pending:</dt>
-                    <dd className="text-yellow-600 font-semibold">
-                      {dept.pending}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt>Rejected:</dt>
-                    <dd className="text-red-600 font-semibold">
-                      {dept.rejected}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt>Needs Review:</dt>
-                    <dd className="text-blue-600 font-semibold">
-                      {dept.needsReview}
-                    </dd>
-                  </div>
-                </dl>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Document Type Statistics Cards */}
-      {!typeLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-          {typeData.map((type) => (
-            <Card key={type.typeId}>
-              <CardHeader>
-                <CardTitle className="text-lg">{type.type}</CardTitle>
-                <CardDescription>Document Type Statistics</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <dl className="space-y-2">
-                  <div className="flex justify-between">
-                    <dt>Total Documents:</dt>
-                    <dd className="font-semibold">{type.total}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt>Approved:</dt>
-                    <dd className="text-green-600 font-semibold">
-                      {type.approved}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt>Pending:</dt>
-                    <dd className="text-yellow-600 font-semibold">
-                      {type.pending}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt>Rejected:</dt>
-                    <dd className="text-red-600 font-semibold">
-                      {type.rejected}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt>Needs Review:</dt>
-                    <dd className="text-blue-600 font-semibold">
-                      {type.needsReview}
-                    </dd>
-                  </div>
-                </dl>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
