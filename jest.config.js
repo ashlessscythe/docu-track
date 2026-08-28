@@ -12,6 +12,9 @@ const config = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
+  transformIgnorePatterns: [
+    "/node_modules/(?!(jose|openid-client|oauth4webapi|@panva/hkdf)/)",
+  ],
   collectCoverage: true,
   coverageDirectory: "coverage",
 };
