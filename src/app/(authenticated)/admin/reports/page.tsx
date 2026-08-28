@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 type ReportStats = {
   users: {
@@ -52,6 +53,7 @@ export default function ReportsPage() {
   const [typeStats, setTypeStats] = useState<DocumentTypeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [typeLoading, setTypeLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStats();
@@ -61,10 +63,18 @@ export default function ReportsPage() {
   const fetchStats = async () => {
     try {
       const response = await fetch("/api/admin/reports");
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `Request failed (${response.status})`);
+      }
       const data = await response.json();
       setStats(data);
-    } catch (error) {
-      console.error("Failed to fetch stats:", error);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to fetch stats:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to load statistics"
+      );
     } finally {
       setLoading(false);
     }
@@ -75,22 +85,31 @@ export default function ReportsPage() {
       const response = await fetch(
         "/api/admin/reports/documents-by-type-admin"
       );
+      if (!response.ok) {
+        console.error("Failed to fetch document type stats:", response.status);
+        return;
+      }
       const data = await response.json();
       setTypeStats(data);
-    } catch (error) {
-      console.error("Failed to fetch document type stats:", error);
+    } catch (err) {
+      console.error("Failed to fetch document type stats:", err);
     } finally {
       setTypeLoading(false);
     }
   };
 
-  if (loading || typeLoading) {
+  if (loading) {
     return <div className="container mx-auto p-6">Loading...</div>;
   }
 
   if (!stats) {
     return (
-      <div className="container mx-auto p-6">Failed to load statistics</div>
+      <div className="container mx-auto p-6 space-y-4">
+        <p className="text-destructive">
+          {error || "Failed to load statistics"}
+        </p>
+        <Button onClick={fetchStats}>Retry</Button>
+      </div>
     );
   }
 
@@ -192,58 +211,66 @@ export default function ReportsPage() {
       </div>
 
       {/* Document Type Statistics */}
-      {typeStats && (
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">Document Types by Site</h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {Object.entries(typeStats.bySite).map(([siteName, types]) => (
-              <Card key={siteName}>
-                <CardHeader>
-                  <CardTitle>{siteName}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <dl className="space-y-4">
-                    {types.map((type) => (
-                      <div key={type.typeId} className="border-t pt-2">
-                        <div className="font-medium">{type.type}</div>
-                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1">
-                          <div className="text-sm text-muted-foreground">
-                            Total:
-                          </div>
-                          <div className="text-sm text-right">{type.total}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Approved:
-                          </div>
-                          <div className="text-sm text-right text-green-600">
-                            {type.approved}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Pending:
-                          </div>
-                          <div className="text-sm text-right text-yellow-600">
-                            {type.pending}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Rejected:
-                          </div>
-                          <div className="text-sm text-right text-red-600">
-                            {type.rejected}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Needs Review:
-                          </div>
-                          <div className="text-sm text-right text-blue-600">
-                            {type.needsReview}
+      {typeLoading ? (
+        <p className="mt-8 text-muted-foreground">
+          Loading document type statistics...
+        </p>
+      ) : (
+        typeStats && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Document Types by Site</h2>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {Object.entries(typeStats.bySite).map(([siteName, types]) => (
+                <Card key={siteName}>
+                  <CardHeader>
+                    <CardTitle>{siteName}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <dl className="space-y-4">
+                      {types.map((type) => (
+                        <div key={type.typeId} className="border-t pt-2">
+                          <div className="font-medium">{type.type}</div>
+                          <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1">
+                            <div className="text-sm text-muted-foreground">
+                              Total:
+                            </div>
+                            <div className="text-sm text-right">
+                              {type.total}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Approved:
+                            </div>
+                            <div className="text-sm text-right text-green-600">
+                              {type.approved}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Pending:
+                            </div>
+                            <div className="text-sm text-right text-yellow-600">
+                              {type.pending}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Rejected:
+                            </div>
+                            <div className="text-sm text-right text-red-600">
+                              {type.rejected}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Needs Review:
+                            </div>
+                            <div className="text-sm text-right text-blue-600">
+                              {type.needsReview}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </dl>
-                </CardContent>
-              </Card>
-            ))}
+                      ))}
+                    </dl>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
+        )
       )}
     </div>
   );
