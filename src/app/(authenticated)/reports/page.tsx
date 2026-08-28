@@ -38,6 +38,13 @@ import {
   STATUS_API_COLORS,
   generateMonthOptions,
 } from "@/components/reports/chart-colors";
+import {
+  useChartBreakpoint,
+  chartMargins,
+  chartTickSize,
+  categoryAxisProps,
+  legendProps,
+} from "@/components/reports/chart-utils";
 
 interface DocumentStats {
   department: string | null;
@@ -145,6 +152,9 @@ export default function ReportsPage() {
   });
 
   const months = React.useMemo(() => generateMonthOptions(24), []);
+  const chartBreakpoint = useChartBreakpoint();
+  const chartTick = { fontSize: chartTickSize(chartBreakpoint) };
+  const xAxisProps = categoryAxisProps(chartBreakpoint);
 
   React.useEffect(() => {
     const fetchSummary = async () => {
@@ -363,17 +373,17 @@ export default function ReportsPage() {
               No documents submitted in this period
             </div>
           ) : (
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[320px] sm:h-[400px]">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <LineChart
                   data={monthlyData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  margin={chartMargins(chartBreakpoint)}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
+                  <XAxis dataKey="day" tick={chartTick} />
+                  <YAxis tick={chartTick} width={chartBreakpoint === "sm" ? 32 : 48} />
+                  <Tooltip contentStyle={{ fontSize: chartTickSize(chartBreakpoint) }} />
+                  <Legend {...legendProps(chartBreakpoint)} />
                   <Line
                     type="monotone"
                     dataKey="APPROVED"
@@ -440,24 +450,33 @@ export default function ReportsPage() {
           ) : (
             <div
               className={
-                isDeptMaximized ? "h-[calc(100vh-200px)]" : "h-[400px]"
+                isDeptMaximized
+                  ? "h-[calc(100vh-200px)]"
+                  : "h-[320px] sm:h-[400px]"
               }
             >
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <BarChart
                   data={deptData.map((d) => ({ ...d, total: d.total }))}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  margin={chartMargins(chartBreakpoint, {
+                    bottom: xAxisProps.height,
+                  })}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="department"
+                    tick={xAxisProps.tick}
+                    angle={xAxisProps.angle}
+                    textAnchor={xAxisProps.textAnchor}
+                    height={xAxisProps.height}
+                    interval={xAxisProps.interval}
                     tickFormatter={(value) =>
                       value === null ? "Global" : value
                     }
                   />
-                  <YAxis />
+                  <YAxis tick={chartTick} width={chartBreakpoint === "sm" ? 32 : 48} />
                   <Tooltip content={<BreakdownTooltip />} />
-                  <Legend />
+                  <Legend {...legendProps(chartBreakpoint)} />
                   <Bar
                     dataKey="approved"
                     stackId="a"
@@ -524,19 +543,30 @@ export default function ReportsPage() {
           ) : (
             <div
               className={
-                isTypeMaximized ? "h-[calc(100vh-200px)]" : "h-[400px]"
+                isTypeMaximized
+                  ? "h-[calc(100vh-200px)]"
+                  : "h-[320px] sm:h-[400px]"
               }
             >
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <BarChart
                   data={typeData.map((d) => ({ ...d, total: d.total }))}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  margin={chartMargins(chartBreakpoint, {
+                    bottom: xAxisProps.height,
+                  })}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="type" />
-                  <YAxis />
+                  <XAxis
+                    dataKey="type"
+                    tick={xAxisProps.tick}
+                    angle={xAxisProps.angle}
+                    textAnchor={xAxisProps.textAnchor}
+                    height={xAxisProps.height}
+                    interval={xAxisProps.interval}
+                  />
+                  <YAxis tick={chartTick} width={chartBreakpoint === "sm" ? 32 : 48} />
                   <Tooltip content={<BreakdownTooltip />} />
-                  <Legend />
+                  <Legend {...legendProps(chartBreakpoint)} />
                   <Bar
                     dataKey="approved"
                     stackId="a"

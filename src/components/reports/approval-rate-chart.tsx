@@ -11,6 +11,12 @@ import {
   Cell,
 } from "recharts";
 import { formatPercent } from "./chart-colors";
+import {
+  useChartBreakpoint,
+  chartHeight,
+  chartMargins,
+  chartTickSize,
+} from "./chart-utils";
 
 interface ApprovalRateItem {
   department: string;
@@ -33,11 +39,17 @@ export function ApprovalRateChart({
   data,
   height = 300,
 }: ApprovalRateChartProps) {
+  const breakpoint = useChartBreakpoint();
+  const tickSize = chartTickSize(breakpoint);
+  const resolvedHeight = chartHeight(breakpoint, height);
+  const yAxisWidth =
+    breakpoint === "sm" ? 68 : breakpoint === "md" ? 88 : 120;
+
   if (data.length === 0) {
     return (
       <div
-        className="flex items-center justify-center text-muted-foreground"
-        style={{ height }}
+        className="flex items-center justify-center text-muted-foreground text-sm sm:text-base"
+        style={{ height: resolvedHeight }}
       >
         No department data available
       </div>
@@ -45,25 +57,27 @@ export function ApprovalRateChart({
   }
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={resolvedHeight} minWidth={0}>
       <BarChart
         data={data}
         layout="vertical"
-        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+        margin={chartMargins(breakpoint, { left: breakpoint === "sm" ? 4 : 12 })}
       >
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis
           type="number"
           domain={[0, 100]}
+          tick={{ fontSize: tickSize }}
           tickFormatter={(v) => `${v}%`}
         />
         <YAxis
           type="category"
           dataKey="department"
-          width={120}
-          tick={{ fontSize: 12 }}
+          width={yAxisWidth}
+          tick={{ fontSize: tickSize }}
         />
         <Tooltip
+          contentStyle={{ fontSize: tickSize }}
           formatter={(value: number, _name, props) => {
             const total = props.payload?.total ?? 0;
             return [`${formatPercent(value)} (${total} docs)`, "Approval Rate"];
