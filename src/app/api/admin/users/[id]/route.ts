@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAdmin, requireSiteAccess } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { sendAccountApprovalEmail } from "@/lib/email";
@@ -14,11 +13,8 @@ export async function PATCH(
 ) {
   const { id } = await params;
 try {
-    const session = await getServerSession(authOptions);
-
-    if (!session || session.user.role !== "ADMIN") {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
+    const session = await requireAdmin();
+    if (session instanceof Response) return session;
 
     const body = await request.json();
     const { role, departmentId, siteId, password, name, email } = body;
@@ -32,6 +28,9 @@ try {
     if (!currentUser) {
       return new NextResponse("User not found", { status: 404 });
     }
+
+    const siteError = requireSiteAccess(session, currentUser.siteId);
+    if (siteError) return siteError;
 
     const isApproval =
       currentUser?.role === "PENDING" && role && role !== "PENDING";
@@ -143,11 +142,20 @@ export async function DELETE(
 ) {
   const { id } = await params;
 try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdmin();
+    if (session instanceof Response) return session;
 
-    if (!session || session.user.role !== "ADMIN") {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const targetUser = await prisma.user.findUnique({
+      where: { id },
+      select: { siteId: true },
+    });
+
+    if (!targetUser) {
+      return new NextResponse("User not found", { status: 404 });
     }
+
+    const siteError = requireSiteAccess(session, targetUser.siteId);
+    if (siteError) return siteError;
 
     await prisma.user.delete({
       where: { id: id },

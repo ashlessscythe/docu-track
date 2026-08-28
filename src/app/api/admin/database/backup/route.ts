@@ -1,24 +1,40 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAdmin } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdmin();
+    if (session instanceof Response) return session;
 
-    if (!session || session.user.role !== "ADMIN") {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
+    const siteId = session.user.siteId;
 
-    // Fetch all data from the database
+    // Fetch site-scoped data, excluding password hashes from users
     const [users, departments, documentTypes, documents] = await Promise.all([
-      prisma.user.findMany(),
-      prisma.department.findMany(),
-      prisma.documentType.findMany(),
-      prisma.document.findMany(),
+      prisma.user.findMany({
+        where: siteId ? { siteId } : undefined,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          departmentId: true,
+          siteId: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      prisma.department.findMany({
+        where: siteId ? { siteId } : undefined,
+      }),
+      prisma.documentType.findMany({
+        where: siteId ? { siteId } : undefined,
+      }),
+      prisma.document.findMany({
+        where: siteId ? { siteId } : undefined,
+      }),
     ]);
 
     const backup = {

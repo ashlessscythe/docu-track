@@ -1,15 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAdmin, requireSiteAccess } from "@/lib/api-auth";
 import { DocumentStatus, Prisma } from "@prisma/client";
 
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session || session.user.role !== "ADMIN") {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+  const session = await requireAdmin();
+  if (session instanceof Response) return session;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -22,7 +18,16 @@ export async function GET(request: Request) {
       | "asc"
       | "desc";
 
+    const siteId = session.user.siteId;
+    if (!siteId) {
+      return NextResponse.json(
+        { error: "Admin must be assigned to a site" },
+        { status: 403 }
+      );
+    }
+
     const where: Prisma.DocumentWhereInput = {
+      siteId,
       ...(status && { status }),
       ...(departmentId && { departmentId }),
       ...(typeId && { typeId }),

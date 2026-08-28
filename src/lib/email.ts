@@ -7,8 +7,13 @@ import { NewUserAdminNotificationEmail } from "@/components/emails/NewUserAdminN
 import { User, Document, DocumentStatus, Comment } from "@prisma/client";
 import { config } from "@/lib/config";
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy-init Resend to avoid build failures when API key is absent
+function getResend(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  return new Resend(apiKey);
+}
+
 const fromEmail = `${process.env.NEXT_PUBLIC_APP_NAME} <notifications@${process.env.EMAIL_FROM_DOMAIN}>`;
 const appName = config.appName;
 
@@ -165,6 +170,11 @@ If you have any questions or need assistance, please don't hesitate to contact o
  */
 export async function sendWelcomeEmail(user: User) {
   try {
+    const resend = getResend();
+    if (!resend) {
+      console.warn("RESEND_API_KEY not configured, skipping welcome email");
+      return { success: false, error: "Email not configured" };
+    }
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
     const { data, error } = await resend.emails.send({
       from: fromEmail,
@@ -209,6 +219,10 @@ export async function sendAdminNewUserEmail(
     }
 
     // Send a single email to all admins
+    const resend = getResend();
+    if (!resend) {
+      return { success: false, error: "Email not configured" };
+    }
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: adminEmailAddresses,
@@ -253,6 +267,10 @@ export async function sendPasswordResetEmail(
       user.email
     )}`;
 
+    const resend = getResend();
+    if (!resend) {
+      return { success: false, error: "Email not configured" };
+    }
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: user.email,
@@ -283,6 +301,10 @@ export async function sendPasswordResetEmail(
 export async function sendAccountApprovalEmail(user: User) {
   try {
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const resend = getResend();
+    if (!resend) {
+      return { success: false, error: "Email not configured" };
+    }
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: user.email,
@@ -352,6 +374,10 @@ export async function sendDocumentActionEmail(
         subject = `Update on Your Document "${document.name}"`;
     }
 
+    const resend = getResend();
+    if (!resend) {
+      return { success: false, error: "Email not configured" };
+    }
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: document.submitter.email,

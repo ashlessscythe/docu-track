@@ -39,6 +39,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { DocumentsTableSkeleton } from "@/components/shared/DocumentsTableSkeleton";
+import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ViewDocumentDialog } from "@/components/ViewDocumentDialog";
 import { DocumentWithRelations, DocumentStatus } from "@/types/documents";
 import { ArrowUpDown, Search, X } from "lucide-react";
@@ -64,83 +66,6 @@ type DocumentType = {
   description: string | null;
   siteId: string | null;
 };
-
-function DocumentsTableSkeleton() {
-  return (
-    <div>
-      <div className="hidden md:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px]">Name</TableHead>
-              <TableHead className="w-[120px]">Type</TableHead>
-              <TableHead className="w-[140px]">Submitter</TableHead>
-              <TableHead className="w-[120px]">Status</TableHead>
-              <TableHead className="w-[120px]">Submitted</TableHead>
-              <TableHead className="w-[100px] text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {[...Array(3)].map((_, i) => (
-              <TableRow key={i}>
-                <TableCell>
-                  <div className="h-4 w-32 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-20 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-16 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-16 bg-muted animate-pulse rounded ml-auto" />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Mobile skeleton */}
-      <div className="grid grid-cols-1 gap-4 md:hidden">
-        {[...Array(3)].map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="pb-2">
-              <div className="h-5 w-40 bg-muted animate-pulse rounded" />
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between">
-                <div className="text-sm text-muted-foreground">Type</div>
-                <div className="h-4 w-20 bg-muted animate-pulse rounded" />
-              </div>
-              <div className="flex justify-between">
-                <div className="text-sm text-muted-foreground">Submitter</div>
-                <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-              </div>
-              <div className="flex justify-between">
-                <div className="text-sm text-muted-foreground">Status</div>
-                <div className="h-4 w-16 bg-muted animate-pulse rounded" />
-              </div>
-              <div className="flex justify-between">
-                <div className="text-sm text-muted-foreground">Submitted</div>
-                <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <div className="h-8 w-full bg-muted animate-pulse rounded" />
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default function ApproverPage() {
   const { data: session, status } = useSession({
@@ -313,28 +238,6 @@ export default function ApproverPage() {
       setActionDialogOpen(false);
     } catch (error) {
       console.error("Error updating document status:", error);
-    }
-  };
-
-  const getStatusColor = (status: DocumentStatus) => {
-    switch (status) {
-      case "APPROVED":
-        return "text-emerald-600 dark:text-emerald-400 font-semibold";
-      case "REJECTED":
-        return "text-destructive font-semibold";
-      case "NEEDS_REVIEW":
-        return "text-primary font-semibold";
-      default:
-        return "text-primary font-semibold";
-    }
-  };
-
-  const formatStatus = (status: DocumentStatus) => {
-    switch (status) {
-      case "NEEDS_REVIEW":
-        return "NEEDS REVIEW";
-      default:
-        return status;
     }
   };
 
@@ -564,9 +467,7 @@ export default function ApproverPage() {
                       <TableCell>{doc.type.name}</TableCell>
                       <TableCell>{doc.submitter.name}</TableCell>
                       <TableCell>
-                        <span className={getStatusColor(doc.status)}>
-                          {formatStatus(doc.status)}
-                        </span>
+                        <StatusBadge status={doc.status} />
                       </TableCell>
                       <TableCell>{formatDate(doc.createdAt)}</TableCell>
                       <TableCell className="text-right">
@@ -621,9 +522,7 @@ export default function ApproverPage() {
                         Status
                       </div>
                       <div className="text-sm">
-                        <span className={getStatusColor(doc.status)}>
-                          {formatStatus(doc.status)}
-                        </span>
+                        <StatusBadge status={doc.status} />
                       </div>
                     </div>
                     <div className="flex justify-between">

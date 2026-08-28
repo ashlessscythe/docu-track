@@ -140,9 +140,9 @@
 
 ## **Milestone 7: Access Control Enforcement**
 
-- [ ] **Implement access control**
-  - [ ] Ensure submitters only see their submissions
-  - [ ] Ensure approvers only see their department's submissions
+- [x] **Implement access control**
+  - [x] Ensure submitters only see their submissions
+  - [x] Ensure approvers only see their department's submissions
 
 **Description:**
 

@@ -414,7 +414,7 @@ export default function UsersManagement() {
       </div>
 
       {/* Desktop Table View (hidden on small screens, visible on medium and up) */}
-      <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+      <div className="hidden md:block overflow-x-auto rounded-lg border border-border shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>

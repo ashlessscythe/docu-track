@@ -164,7 +164,7 @@ export default function FeedbackManagement() {
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
-            <SelectContent className="border border-border bg-background text-forground shadow-md rounded-md">
+            <SelectContent className="border border-border bg-background text-foreground shadow-md rounded-md">
               <SelectItem value="ALL">All Statuses</SelectItem>
               <SelectItem value="PENDING">Pending</SelectItem>
               <SelectItem value="REVIEWED">Reviewed</SelectItem>
@@ -235,7 +235,7 @@ export default function FeedbackManagement() {
                           <SelectTrigger className="w-[120px]">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="border border-border bg-background text-forground shadow-md rounded-md">
+                          <SelectContent className="border border-border bg-background text-foreground shadow-md rounded-md">
                             <SelectItem value="PENDING">Pending</SelectItem>
                             <SelectItem value="REVIEWED">Reviewed</SelectItem>
                             <SelectItem value="RESOLVED">Resolved</SelectItem>
@@ -295,7 +295,7 @@ export default function FeedbackManagement() {
                       <SelectTrigger className="w-[120px]">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="border border-border bg-background text-forground shadow-md rounded-md">
+                      <SelectContent className="border border-border bg-background text-foreground shadow-md rounded-md">
                         <SelectItem value="PENDING">Pending</SelectItem>
                         <SelectItem value="REVIEWED">Reviewed</SelectItem>
                         <SelectItem value="RESOLVED">Resolved</SelectItem>

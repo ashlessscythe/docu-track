@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { UserRole } from "@prisma/client";
 import { z } from "zod";
 import { sendAdminNewUserEmail, sendWelcomeEmail } from "@/lib/email";
-import { config } from "@/src/lib/config";
+import { config } from "@/lib/config";
 
 // Validation schema with stronger password requirements
 const registerSchema = z.object({
@@ -58,7 +58,6 @@ export async function POST(req: Request) {
   try {
     // Parse request body
     const body = await req.json();
-    console.log("Register request body:", body);
 
     // Validate input
     const result = registerSchema.safeParse(body);

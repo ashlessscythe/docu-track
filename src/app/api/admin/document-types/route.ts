@@ -1,24 +1,22 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAdmin } from "@/lib/api-auth";
 import { prisma } from "@/lib/prisma";
-import type { DocumentType } from "@/types";
 
 export const dynamic = "force-dynamic";
-
-// Default site ID (matches the one created in the migration)
-const DEFAULT_SITE_ID = "default-site-id";
 
 // GET /api/admin/document-types - Get all document types
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdmin();
+    if (session instanceof Response) return session;
 
-    if (!session || session.user.role !== "ADMIN") {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const siteId = session.user.siteId;
+    if (!siteId) {
+      return NextResponse.json([]);
     }
 
     const documentTypes = await prisma.documentType.findMany({
+      where: { siteId },
       select: {
         id: true,
         name: true,
@@ -59,10 +57,14 @@ export async function GET() {
 // POST /api/admin/document-types - Create a new document type
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdmin();
+    if (session instanceof Response) return session;
 
-    if (!session || session.user.role !== "ADMIN") {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const adminSiteId = session.user.siteId;
+    if (!adminSiteId) {
+      return new NextResponse("Admin must be assigned to a site", {
+        status: 403,
+      });
     }
 
     const body = await request.json();
@@ -70,9 +72,15 @@ export async function POST(request: Request) {
       name,
       description,
       type = "default",
-      siteId = DEFAULT_SITE_ID,
+      siteId = adminSiteId,
       ...otherFields
     } = body;
+
+    if (siteId !== adminSiteId) {
+      return new NextResponse("Cannot create document types for other sites", {
+        status: 403,
+      });
+    }
 
     if (!name) {
       return new NextResponse("Document type name is required", {

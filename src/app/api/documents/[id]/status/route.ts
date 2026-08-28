@@ -1,6 +1,10 @@
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/lib/auth";
+import {
+  requireRole,
+  requireSiteAccess,
+  parseBody,
+} from "@/lib/api-auth";
+import { updateDocumentStatusSchema } from "@/lib/schemas";
 import { prisma } from "@/lib/prisma";
 import { DocumentStatus } from "@prisma/client";
 import { sendDocumentActionEmail } from "@/lib/email";
@@ -25,21 +29,17 @@ async function handleStatusUpdate(
   documentId: string
 ) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    if (session.user.role !== "APPROVER" && session.user.role !== "ADMIN") {
-      return new NextResponse("Forbidden", { status: 403 });
-    }
+    const session = await requireRole(["APPROVER", "ADMIN"]);
+    if (session instanceof Response) return session;
 
     if (!documentId) {
       return new NextResponse("Document ID is required", { status: 400 });
     }
 
-    const { status } = await request.json();
+    const body = await request.json();
+    const parsed = parseBody(updateDocumentStatusSchema, body);
+    if (parsed instanceof Response) return parsed;
+    const { status } = parsed.data;
 
     // Verify the document exists and check department access
     const document = await prisma.document.findUnique({
@@ -58,6 +58,9 @@ async function handleStatusUpdate(
     if (!document) {
       return new NextResponse("Document not found", { status: 404 });
     }
+
+    const siteError = requireSiteAccess(session, document.siteId);
+    if (siteError) return siteError;
 
     // For regular approvers, verify department access
     if (

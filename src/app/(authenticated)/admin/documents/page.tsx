@@ -5,7 +5,6 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { DocumentsTable } from "@/components/DocumentsTable";
-import { Header } from "@/components/Header";
 
 export const metadata: Metadata = {
   title: "Documents | Admin",

@@ -14,7 +14,7 @@ import {
   Text,
 } from "@react-email/components";
 import * as React from "react";
-import { LOGO_URL } from "@/src/lib/config";
+import { LOGO_URL } from "@/lib/config";
 import { LogOut } from "lucide-react";
 
 interface PasswordResetEmailProps {

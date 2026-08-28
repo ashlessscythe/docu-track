@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useTheme } from "./theme-provider";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Palette,
   Moon,
@@ -22,7 +22,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -251,9 +251,8 @@ export function Header() {
             </DropdownMenu>
             <Link
               href="/signout"
-              className="border rounded px-2 py-1 text-white bg-red-600 hover:bg-red-700 transition-colors dark:bg-red-500 dark:hover:bg-red-600"
             >
-              Sign Out
+              <Button variant="destructive" size="sm">Sign Out</Button>
             </Link>
           </div>
         ) : (
@@ -323,7 +322,7 @@ export function Header() {
                     <Link
                       href="/signout"
                       onClick={() => setMobileOpen(false)}
-                      className="rounded-md px-3 py-2 text-red-600 hover:bg-accent"
+                      className="rounded-md px-3 py-2 text-destructive hover:bg-accent"
                     >
                       Sign Out
                     </Link>

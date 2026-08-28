@@ -16,7 +16,7 @@ import {
   Column,
 } from "@react-email/components";
 import * as React from "react";
-import { LOGO_URL } from "@/src/lib/config";
+import { LOGO_URL } from "@/lib/config";
 
 interface WelcomeEmailProps {
   name: string;

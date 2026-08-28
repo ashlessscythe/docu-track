@@ -45,7 +45,7 @@ export default async function DashboardPage() {
               <li>
                 <Link
                   href="/submitter"
-                  className="flex items-center hover:text-blue-600 transition-colors"
+                  className="flex items-center text-primary hover:text-primary/80 transition-colors"
                 >
                   <svg
                     className="mr-2 h-4 w-4"
@@ -67,7 +67,7 @@ export default async function DashboardPage() {
               <li>
                 <Link
                   href="/approver"
-                  className="flex items-center hover:text-blue-600 transition-colors"
+                  className="flex items-center text-primary hover:text-primary/80 transition-colors"
                 >
                   <svg
                     className="mr-2 h-4 w-4"
@@ -105,7 +105,7 @@ export default async function DashboardPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Status</span>
-                <span className="text-sm text-green-600">Active</span>
+                <span className="text-sm text-emerald-600 dark:text-emerald-400">Active</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">System</span>
@@ -129,7 +129,7 @@ export default async function DashboardPage() {
                 <li>
                   <Link
                     href="/user/guide"
-                    className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                    className="flex items-center text-primary hover:text-primary/80 transition-colors"
                   >
                     <svg
                       className="mr-2 h-4 w-4"
@@ -151,7 +151,7 @@ export default async function DashboardPage() {
                 <li>
                   <Link
                     href="/user/faq"
-                    className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                    className="flex items-center text-primary hover:text-primary/80 transition-colors"
                   >
                     <svg
                       className="mr-2 h-4 w-4"
@@ -173,7 +173,7 @@ export default async function DashboardPage() {
                 <li>
                   <Link
                     href="/contact/support"
-                    className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                    className="flex items-center text-primary hover:text-primary/80 transition-colors"
                   >
                     <svg
                       className="mr-2 h-4 w-4"

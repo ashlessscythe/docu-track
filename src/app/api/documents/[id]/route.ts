@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireSession, requireSiteAccess } from "@/lib/api-auth";
+import { validateFileUpload, sanitizeFilename } from "@/lib/schemas";
 import { prisma } from "@/lib/prisma";
 
 export async function DELETE(
@@ -9,11 +9,8 @@ export async function DELETE(
 ) {
   const { id } = await params;
 try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return new NextResponse("Unauthorized - Please sign in", { status: 401 });
-    }
+    const session = await requireSession();
+    if (session instanceof Response) return session;
 
     // First try to find the document
     const document = await prisma.document.findUnique({
@@ -25,6 +22,9 @@ try {
     if (!document) {
       return new NextResponse("Document not found", { status: 404 });
     }
+
+    const siteError = requireSiteAccess(session, document.siteId);
+    if (siteError) return siteError;
 
     // Allow deletion if user is admin or if the document belongs to the user
     if (session.user.role !== "ADMIN") {
@@ -66,11 +66,8 @@ export async function PUT(
 ) {
   const { id } = await params;
 try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
+    const session = await requireSession();
+    if (session instanceof Response) return session;
 
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
@@ -85,6 +82,9 @@ try {
     if (!document) {
       return new NextResponse("Document not found", { status: 404 });
     }
+
+    const siteError = requireSiteAccess(session, document.siteId);
+    if (siteError) return siteError;
 
     // Check permissions - allow only admin or document owner
     const isAdmin = session.user.role === "ADMIN";
@@ -101,8 +101,12 @@ try {
       return new NextResponse("No file provided", { status: 400 });
     }
 
-    // Use the original filename from the uploaded file
-    const originalFilename = file.name;
+    const fileError = validateFileUpload(file);
+    if (fileError) {
+      return new NextResponse(fileError, { status: 400 });
+    }
+
+    const originalFilename = sanitizeFilename(file.name);
 
     // Convert file to Buffer
     const buffer = Buffer.from(await file.arrayBuffer());

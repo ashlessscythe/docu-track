@@ -4,10 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DocumentStatus } from "@prisma/client";
 
-export const dynamic = "force-dynamic";
+import { validateFileUpload, sanitizeFilename } from "@/lib/schemas";
 
-// Maximum file size: 1.5MB in bytes
-const MAX_FILE_SIZE = 1.5 * 1024 * 1024;
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
@@ -115,13 +114,13 @@ export async function POST(req: Request) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
 
-    // Check file size
-    if (file.size > MAX_FILE_SIZE) {
-      return new NextResponse("File size exceeds 1.5MB limit", { status: 400 });
+    // Validate file upload
+    const fileError = validateFileUpload(file);
+    if (fileError) {
+      return new NextResponse(fileError, { status: 400 });
     }
 
-    // Use the original filename from the uploaded file
-    const originalFilename = file.name;
+    const originalFilename = sanitizeFilename(file.name);
 
     // Convert file to Buffer
     const buffer = Buffer.from(await file.arrayBuffer());

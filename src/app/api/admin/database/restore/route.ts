@@ -1,123 +1,101 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAdmin, parseBody } from "@/lib/api-auth";
+import { databaseRestoreSchema } from "@/lib/schemas";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await requireAdmin();
+    if (session instanceof Response) return session;
 
-    if (!session || session.user.role !== "ADMIN") {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const siteId = session.user.siteId;
+    if (!siteId) {
+      return new NextResponse("Admin must be assigned to a site", {
+        status: 403,
+      });
     }
 
-    const formData = await request.formData();
-    const backupFile = formData.get("backup") as File;
+    const body = await request.json();
+    const parsed = parseBody(databaseRestoreSchema, body);
+    if (parsed instanceof Response) return parsed;
 
-    if (!backupFile) {
-      return new NextResponse("No backup file provided", { status: 400 });
-    }
-
-    const backupData = JSON.parse(await backupFile.text());
-
-    // Validate backup data structure
-    if (!backupData.data || !backupData.timestamp) {
-      return new NextResponse("Invalid backup file format", { status: 400 });
-    }
+    const backupData = parsed.data;
 
     // Start a transaction to ensure data consistency
-    await prisma.$transaction(async (tx) => {
-      // Clear existing data
-      await tx.document.deleteMany();
-      await tx.documentType.deleteMany();
-      await tx.user.deleteMany();
-      await tx.department.deleteMany();
+    const { data: restoreData } = parsed.data;
 
-      // Restore departments first
-      if (backupData.data.departments?.length) {
+    await prisma.$transaction(async (tx) => {
+      await tx.document.deleteMany({ where: { siteId } });
+      await tx.documentType.deleteMany({ where: { siteId } });
+      await tx.user.deleteMany({ where: { siteId } });
+      await tx.department.deleteMany({ where: { siteId } });
+
+      if (restoreData.departments?.length) {
         await tx.department.createMany({
-          data: backupData.data.departments.map(
-            ({ id, name, description }: any) => ({
-              id,
-              name,
-              description,
+          data: restoreData.departments.map(
+            (dept) => ({
+              id: dept.id as string,
+              name: dept.name as string,
+              description: (dept.description as string) ?? null,
+              siteId,
             })
           ),
         });
       }
 
       // Restore document types
-      if (backupData.data.documentTypes?.length) {
+      if (restoreData.documentTypes?.length) {
         await tx.documentType.createMany({
-          data: backupData.data.documentTypes.map(
-            ({ id, name, description }: any) => ({
-              id,
-              name,
-              description,
+          data: restoreData.documentTypes.map(
+            (type) => ({
+              id: type.id as string,
+              name: type.name as string,
+              description: (type.description as string) ?? null,
+              siteId,
             })
           ),
         });
       }
 
-      // Restore users
-      if (backupData.data.users?.length) {
+      // Restore users (password must be provided in backup for restore)
+      if (restoreData.users?.length) {
         await tx.user.createMany({
-          data: backupData.data.users.map(
-            ({
-              id,
-              email,
-              name,
-              password,
-              role,
-              departmentId,
-              createdAt,
-              updatedAt,
-            }: any) => ({
-              id,
-              email,
-              name,
-              password,
-              role,
-              departmentId,
-              createdAt: new Date(createdAt),
-              updatedAt: new Date(updatedAt),
+          data: restoreData.users.map(
+            (user) => ({
+              id: user.id as string,
+              email: user.email as string,
+              name: user.name as string,
+              password: user.password as string,
+              role: user.role as "ADMIN" | "APPROVER" | "SUBMITTER" | "REPORTER" | "PENDING",
+              departmentId: (user.departmentId as string) ?? null,
+              siteId,
+              createdAt: new Date(user.createdAt as string),
+              updatedAt: new Date(user.updatedAt as string),
             })
           ),
         });
       }
 
       // Restore documents
-      if (backupData.data.documents?.length) {
+      if (restoreData.documents?.length) {
         await tx.document.createMany({
-          data: backupData.data.documents.map(
-            ({
-              id,
-              name,
-              typeId,
-              description,
-              departmentId,
-              status,
-              content,
-              mimeType,
-              submitterId,
-              approverId,
-              createdAt,
-              updatedAt,
-            }: any) => ({
-              id,
-              name,
-              typeId,
-              description,
-              departmentId,
-              status,
-              content,
-              mimeType,
-              submitterId,
-              approverId,
-              createdAt: new Date(createdAt),
-              updatedAt: new Date(updatedAt),
+          data: restoreData.documents.map(
+            (doc) => ({
+              id: doc.id as string,
+              name: doc.name as string,
+              typeId: doc.typeId as string,
+              description: doc.description as string,
+              departmentId: (doc.departmentId as string) ?? null,
+              status: doc.status as "PENDING" | "APPROVED" | "REJECTED" | "NEEDS_REVIEW",
+              content: doc.content as Buffer,
+              mimeType: doc.mimeType as string,
+              submitterId: doc.submitterId as string,
+              approverId: (doc.approverId as string) ?? null,
+              siteId,
+              createdAt: new Date(doc.createdAt as string),
+              updatedAt: new Date(doc.updatedAt as string),
             })
           ),
         });

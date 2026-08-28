@@ -2,8 +2,25 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { SubmitDocumentDialog } from "@/components/SubmitDocumentDialog";
-import { ViewDocumentDialog } from "@/components/ViewDocumentDialog";
+import { DocumentsTableSkeleton } from "@/components/shared/DocumentsTableSkeleton";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import dynamic from "next/dynamic";
+
+const SubmitDocumentDialog = dynamic(
+  () =>
+    import("@/components/SubmitDocumentDialog").then((m) => ({
+      default: m.SubmitDocumentDialog,
+    })),
+  { loading: () => null }
+);
+
+const ViewDocumentDialog = dynamic(
+  () =>
+    import("@/components/ViewDocumentDialog").then((m) => ({
+      default: m.ViewDocumentDialog,
+    })),
+  { loading: () => null }
+);
 import {
   Table,
   TableBody,
@@ -43,28 +60,6 @@ interface Document {
   createdAt: string;
 }
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "APPROVED":
-      return "text-emerald-600 dark:text-emerald-400 font-semibold";
-    case "REJECTED":
-      return "text-destructive font-semibold";
-    case "NEEDS_REVIEW":
-      return "text-primary font-semibold";
-    default:
-      return "text-primary font-semibold";
-  }
-};
-
-const formatStatus = (status: string) => {
-  switch (status) {
-    case "NEEDS_REVIEW":
-      return "NEEDS REVIEW";
-    default:
-      return status;
-  }
-};
-
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("en-US", {
     year: "numeric",
@@ -72,84 +67,6 @@ const formatDate = (dateString: string) => {
     day: "2-digit",
   });
 };
-
-function DocumentsTableSkeleton() {
-  return (
-    <div>
-      {/* Desktop skeleton */}
-      <div className="hidden md:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px]">Name</TableHead>
-              <TableHead className="w-[120px]">Type</TableHead>
-              <TableHead className="w-[140px]">Department</TableHead>
-              <TableHead className="w-[120px]">Status</TableHead>
-              <TableHead className="w-[120px]">Submitted</TableHead>
-              <TableHead className="w-[80px] text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {[...Array(3)].map((_, i) => (
-              <TableRow key={i}>
-                <TableCell>
-                  <div className="h-4 w-32 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-20 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-16 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell>
-                  <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="h-4 w-12 bg-muted animate-pulse rounded ml-auto" />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Mobile skeleton */}
-      <div className="grid grid-cols-1 gap-4 md:hidden">
-        {[...Array(3)].map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="pb-2">
-              <div className="h-5 w-40 bg-muted animate-pulse rounded" />
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between">
-                <div className="text-sm text-muted-foreground">Type</div>
-                <div className="h-4 w-20 bg-muted animate-pulse rounded" />
-              </div>
-              <div className="flex justify-between">
-                <div className="text-sm text-muted-foreground">Department</div>
-                <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-              </div>
-              <div className="flex justify-between">
-                <div className="text-sm text-muted-foreground">Status</div>
-                <div className="h-4 w-16 bg-muted animate-pulse rounded" />
-              </div>
-              <div className="flex justify-between">
-                <div className="text-sm text-muted-foreground">Submitted</div>
-                <div className="h-4 w-24 bg-muted animate-pulse rounded" />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <div className="h-8 w-full bg-muted animate-pulse rounded" />
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default function SubmitterPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -240,11 +157,7 @@ export default function SubmitterPage() {
                       <TableCell>{doc.type.name}</TableCell>
                       <TableCell>{doc.department?.name ?? "Pending"}</TableCell>
                       <TableCell>
-                        <span
-                          className={`inline-block ${getStatusColor(doc.status)}`}
-                        >
-                          {formatStatus(doc.status)}
-                        </span>
+                        <StatusBadge status={doc.status} />
                       </TableCell>
                       <TableCell>{formatDate(doc.createdAt)}</TableCell>
                       <TableCell className="text-right">
@@ -300,11 +213,7 @@ export default function SubmitterPage() {
                     <div className="flex justify-between">
                       <div className="text-sm text-muted-foreground">Status</div>
                       <div className="text-sm">
-                        <span
-                          className={`inline-block ${getStatusColor(doc.status)}`}
-                        >
-                          {formatStatus(doc.status)}
-                        </span>
+                        <StatusBadge status={doc.status} />
                       </div>
                     </div>
                     <div className="flex justify-between">

@@ -20,12 +20,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Department, DocumentStatus, DocumentType } from "@prisma/client";
 import { useState } from "react";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { ResponsiveDataView } from "@/components/shared/ResponsiveDataView";
 import {
   Card,
   CardHeader,
   CardTitle,
   CardContent,
-  CardFooter,
 } from "@/components/ui/card";
 
 type DocumentWithRelations = {
@@ -53,21 +54,6 @@ interface DocumentsTableProps {
   initialDocuments: DocumentWithRelations[];
   departments: Department[];
   documentTypes: DocumentType[];
-}
-
-function getStatusColor(status: string) {
-  switch (status) {
-    case "PENDING":
-      return "text-yellow-600 bg-yellow-50 px-2 py-1 rounded";
-    case "APPROVED":
-      return "text-green-600 bg-green-50 px-2 py-1 rounded";
-    case "REJECTED":
-      return "text-red-600 bg-red-50 px-2 py-1 rounded";
-    case "NEEDS_REVIEW":
-      return "text-blue-600 bg-blue-50 px-2 py-1 rounded";
-    default:
-      return "text-gray-600";
-  }
 }
 
 const ALL_VALUE = "all";
@@ -119,7 +105,7 @@ export function DocumentsTable({
 
   return (
     <div>
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Input
           placeholder="Search documents..."
           value={search}
@@ -170,14 +156,22 @@ export function DocumentsTable({
             ))}
           </SelectContent>
         </Select>
-        <Button onClick={applyFilters} className="w-full">
-          Apply Filters
-        </Button>
+        <div className="sm:col-span-2 lg:col-span-4">
+          <Button onClick={applyFilters} className="w-full sm:w-auto">
+            Apply Filters
+          </Button>
+        </div>
       </div>
 
-      {/* Desktop Table View */}
-      <div className="rounded-md border hidden md:block">
-        <Table>
+      <ResponsiveDataView
+        isEmpty={documents.length === 0}
+        emptyState={
+          <div className="text-center p-8 border rounded-lg bg-muted/10 text-muted-foreground">
+            No documents match your filters
+          </div>
+        }
+        table={
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead
@@ -231,9 +225,7 @@ export function DocumentsTable({
                 <TableCell>{doc.type.name}</TableCell>
                 <TableCell>{doc.department?.name || "N/A"}</TableCell>
                 <TableCell>
-                  <span className={getStatusColor(doc.status)}>
-                    {doc.status}
-                  </span>
+                  <StatusBadge status={doc.status} />
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col">
@@ -264,11 +256,8 @@ export function DocumentsTable({
             ))}
           </TableBody>
         </Table>
-      </div>
-
-      {/* Mobile Card View */}
-      <div className="grid grid-cols-1 gap-4 md:hidden">
-        {documents.map((doc) => (
+        }
+        mobileCards={documents.map((doc) => (
           <Card key={doc.id} className="overflow-hidden">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">{doc.name}</CardTitle>
@@ -287,9 +276,7 @@ export function DocumentsTable({
               <div className="flex justify-between">
                 <div className="text-sm text-muted-foreground">Status</div>
                 <div className="text-sm">
-                  <span className={getStatusColor(doc.status)}>
-                    {doc.status}
-                  </span>
+                  <StatusBadge status={doc.status} />
                 </div>
               </div>
               <div className="flex justify-between">
@@ -327,12 +314,7 @@ export function DocumentsTable({
             </CardContent>
           </Card>
         ))}
-        {documents.length === 0 && (
-          <div className="text-center p-8 border rounded-lg bg-muted/10 text-muted-foreground">
-            No documents match your filters
-          </div>
-        )}
-      </div>
+      />
     </div>
   );
 }

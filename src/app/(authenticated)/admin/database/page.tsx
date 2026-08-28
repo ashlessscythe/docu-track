@@ -10,6 +10,8 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function DatabaseManagement() {
   const [backupStatus, setBackupStatus] = useState<string>("");
@@ -42,18 +44,28 @@ export default function DatabaseManagement() {
     }
   };
 
+  const [restoreConfirm, setRestoreConfirm] = useState("");
+
   const handleRestore = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    if (restoreConfirm !== "RESTORE_DATABASE") {
+      setRestoreStatus('Type RESTORE_DATABASE in the confirmation field first');
+      return;
+    }
+
     try {
       setRestoreStatus("Initiating restore...");
-      const formData = new FormData();
-      formData.append("backup", file);
+      const backupJson = JSON.parse(await file.text());
 
       const response = await fetch("/api/admin/database/restore", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          confirmToken: "RESTORE_DATABASE",
+          data: backupJson.data ?? backupJson,
+        }),
       });
 
       if (response.ok) {
@@ -101,6 +113,17 @@ export default function DatabaseManagement() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="restore-confirm">
+                  Type RESTORE_DATABASE to confirm
+                </Label>
+                <Input
+                  id="restore-confirm"
+                  value={restoreConfirm}
+                  onChange={(e) => setRestoreConfirm(e.target.value)}
+                  placeholder="RESTORE_DATABASE"
+                />
+              </div>
               <input
                 type="file"
                 accept=".json"
