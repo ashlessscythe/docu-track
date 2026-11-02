@@ -66,7 +66,7 @@ export async function POST(req: Request) {
       
       // Extract field-specific errors
       const fieldErrors: Record<string, string> = {};
-      result.error.errors.forEach((err) => {
+      result.error.issues.forEach((err) => {
         const field = err.path[0] as string;
         if (field && !fieldErrors[field]) {
           fieldErrors[field] = err.message;
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
           error: "Validation failed",
           fieldErrors,
           // Also include a general message for the first error
-          message: result.error.errors[0]?.message || "Please check your input"
+          message: result.error.issues[0]?.message || "Please check your input"
         },
         { status: 400 }
       );
