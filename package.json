@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
-    "@hookform/resolvers": "^3.9.1",
+    "@hookform/resolvers": "^5.9.2",
     "@prisma/client": "^6.4.1",
     "@radix-ui/react-alert-dialog": "^1.1.2",
     "@radix-ui/react-dialog": "^1.1.2",
@@ -27,7 +27,7 @@
     "@radix-ui/react-select": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.2",
-    "@react-email/components": "^0.5.7",
+    "@react-email/components": "^1.0.12",
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.0",
@@ -38,12 +38,12 @@
     "next-auth": "^4.24.15",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-hook-form": "^7.53.2",
+    "react-hook-form": "^7.55.0",
     "recharts": "^2.14.1",
-    "resend": "^4.1.2",
+    "resend": "^6.37.0",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.23.8"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@faker-js/faker": "^10.6.0",
@@ -68,6 +68,10 @@
   },
   "overrides": {
     "postcss-selector-parser": "^7.1.7",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "minimatch": "^11.0.4",
+    "glob": "^14.0.3",
+    "@react-email/render": "^2.2.0",
+    "zod": "^4.6.7"
   }
 }

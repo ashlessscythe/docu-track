@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession, Session } from "next-auth";
 import { UserRole } from "@prisma/client";
-import { ZodSchema } from "zod";
+import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 
 export type AuthSession = Session;
@@ -50,7 +50,7 @@ export function requireSiteAccess(
 }
 
 export function parseBody<T>(
-  schema: ZodSchema<T>,
+  schema: z.ZodType<T>,
   body: unknown
 ): { data: T } | NextResponse {
   const result = schema.safeParse(body);

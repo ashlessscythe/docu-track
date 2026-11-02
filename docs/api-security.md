@@ -9,7 +9,7 @@
 ## Validation
 
 - All POST/PATCH/PUT bodies must be validated with Zod schemas from `src/lib/schemas/`
-- Enums (`DocumentStatus`, `UserRole`, `FeedbackStatus`) must use `z.nativeEnum()`
+- Enums (`DocumentStatus`, `UserRole`, `FeedbackStatus`) must use `z.enum()`
 
 ## Site scoping
 

@@ -1,11 +1,11 @@
 import { DocumentStatus, UserRole, FeedbackStatus } from "@prisma/client";
 import { z } from "zod";
 
-export const documentStatusSchema = z.nativeEnum(DocumentStatus);
+export const documentStatusSchema = z.enum(DocumentStatus);
 
-export const userRoleSchema = z.nativeEnum(UserRole);
+export const userRoleSchema = z.enum(UserRole);
 
-export const feedbackStatusSchema = z.nativeEnum(FeedbackStatus);
+export const feedbackStatusSchema = z.enum(FeedbackStatus);
 
 export const updateDocumentStatusSchema = z.object({
   status: documentStatusSchema,
@@ -73,12 +73,12 @@ export function validateFileUpload(file: File | null): string | null {
 export const databaseRestoreSchema = z.object({
   confirmToken: z.literal("RESTORE_DATABASE"),
   data: z.object({
-    users: z.array(z.record(z.unknown())).optional(),
-    documents: z.array(z.record(z.unknown())).optional(),
-    departments: z.array(z.record(z.unknown())).optional(),
-    documentTypes: z.array(z.record(z.unknown())).optional(),
-    sites: z.array(z.record(z.unknown())).optional(),
-    templates: z.array(z.record(z.unknown())).optional(),
-    feedback: z.array(z.record(z.unknown())).optional(),
+    users: z.array(z.record(z.string(), z.unknown())).optional(),
+    documents: z.array(z.record(z.string(), z.unknown())).optional(),
+    departments: z.array(z.record(z.string(), z.unknown())).optional(),
+    documentTypes: z.array(z.record(z.string(), z.unknown())).optional(),
+    sites: z.array(z.record(z.string(), z.unknown())).optional(),
+    templates: z.array(z.record(z.string(), z.unknown())).optional(),
+    feedback: z.array(z.record(z.string(), z.unknown())).optional(),
   }),
 });
